@@ -1,0 +1,18 @@
+service: service
+
+configValidationMode: error
+frameworkVersion: '*'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+functions:
+  function:
+    handler: index.handler
+    layers:
+      - { Ref: LayerLambdaLayer }
+
+layers:
+  layer:
+    path: layer
