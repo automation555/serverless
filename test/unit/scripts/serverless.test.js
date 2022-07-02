@@ -24,7 +24,7 @@ describe('test/unit/scripts/serverless.test.js', () => {
     const output = String(
       (
         await spawn('node', [serverlessPath, '--help'], {
-          cwd: path.resolve(cliFixturesPath, 'config-syntax-error'),
+          cwd: path.resolve(cliFixturesPath, 'configSyntaxError'),
         })
       ).stdoutBuffer
     );
@@ -34,12 +34,12 @@ describe('test/unit/scripts/serverless.test.js', () => {
   it('should report with an error invalid configuration', async () => {
     try {
       await spawn('node', [serverlessPath, 'print'], {
-        cwd: path.resolve(cliFixturesPath, 'config-syntax-error'),
+        cwd: path.resolve(cliFixturesPath, 'configSyntaxError'),
       });
       throw new Error('Unexpected');
     } catch (error) {
       expect(error.code).to.equal(1);
-      expect(String(error.stdoutBuffer)).to.include('Cannot parse');
+      expect(String(error.stdoutBuffer)).to.include('Environment: ');
     }
   });
 
@@ -51,19 +51,19 @@ describe('test/unit/scripts/serverless.test.js', () => {
       throw new Error('Unexpected');
     } catch (error) {
       expect(error.code).to.equal(1);
-      expect(String(error.stdoutBuffer)).to.include('Error: Stop');
+      expect(String(error.stdoutBuffer)).to.include('Environment: ');
     }
   });
 
   it('should handle uncaught exceptions', async () => {
     try {
       await spawn('node', [serverlessPath, 'print'], {
-        cwd: path.resolve(cliFixturesPath, 'uncaught-exception'),
+        cwd: path.resolve(cliFixturesPath, 'uncaughtException'),
       });
       throw new Error('Unexpected');
     } catch (error) {
       expect(error.code).to.equal(1);
-      expect(String(error.stdoutBuffer)).to.include('Error: Stop');
+      expect(String(error.stdoutBuffer)).to.include('Environment: ');
     }
   });
 
@@ -71,7 +71,7 @@ describe('test/unit/scripts/serverless.test.js', () => {
     const output = String(
       (
         await spawn('node', [serverlessBinPath, '--help'], {
-          cwd: (await programmaticFixturesEngine.setup('locally-installed-serverless')).servicePath,
+          cwd: (await programmaticFixturesEngine.setup('locallyInstalledServerless')).servicePath,
         })
       ).stderrBuffer
     );
@@ -82,7 +82,7 @@ describe('test/unit/scripts/serverless.test.js', () => {
     const output = String(
       (
         await spawn('node', [serverlessPath, 'plugin', 'list'], {
-          cwd: path.resolve(cliFixturesPath, 'config-syntax-error'),
+          cwd: path.resolve(cliFixturesPath, 'configSyntaxError'),
         })
       ).stdoutBuffer
     );
@@ -106,37 +106,11 @@ describe('test/unit/scripts/serverless.test.js', () => {
       String(
         (
           await spawn('node', [serverlessPath, 'print'], {
-            cwd: path.resolve(programmaticFixturesPath, 'multi-service/service-a'),
+            cwd: path.resolve(programmaticFixturesPath, 'multiService/serviceA'),
           })
         ).stdoutBuffer
       )
     ).to.include('self: bar');
-  });
-
-  it('should support "-c" flag', async () => {
-    expect(
-      String(
-        (
-          await spawn('node', [serverlessPath, 'print', '-c', 'serverless.custom.yml'], {
-            cwd: path.resolve(programmaticFixturesPath, 'custom-config-filename'),
-          })
-        ).stdoutBuffer
-      )
-    ).to.include('looks: good');
-  });
-
-  it('should support "-c" flag for "aws-service" commands', async () => {
-    try {
-      await spawn('node', [serverlessPath, 'info', '-c', 'serverless.custom.yml'], {
-        cwd: path.resolve(programmaticFixturesPath, 'custom-config-filename'),
-      });
-      throw new Error('Unexpected');
-    } catch (error) {
-      // The way to validate it is to check if command errors out with missing credentials
-      // at this point we know the configuration was resolved properly
-      expect(error.code).to.equal(1);
-      expect(String(error.stdoutBuffer)).to.include('AWS provider credentials not found');
-    }
   });
 
   it('should rejected unresolved "provider" section', async () => {
@@ -144,7 +118,7 @@ describe('test/unit/scripts/serverless.test.js', () => {
       await spawn('node', [serverlessPath, 'print'], {
         cwd: (
           await programmaticFixturesEngine.setup('aws', {
-            configExt: { provider: '${foo:bar}' },
+            configExt: { variablesResolutionMode: '20210326', provider: '${foo:bar}' },
           })
         ).servicePath,
       });
@@ -160,7 +134,7 @@ describe('test/unit/scripts/serverless.test.js', () => {
       await spawn('node', [serverlessPath, 'print'], {
         cwd: (
           await programmaticFixturesEngine.setup('aws', {
-            configExt: { provider: { stage: '${foo:bar}' } },
+            configExt: { variablesResolutionMode: '20210326', provider: { stage: '${foo:bar}' } },
           })
         ).servicePath,
       });
@@ -230,7 +204,7 @@ describe('test/unit/scripts/serverless.test.js', () => {
       await spawn('node', [serverlessPath, 'print'], {
         cwd: (
           await programmaticFixturesEngine.setup('aws', {
-            configExt: { plugins: '${foo:bar}' },
+            configExt: { variablesResolutionMode: '20210326', plugins: '${foo:bar}' },
           })
         ).servicePath,
       });
@@ -241,24 +215,11 @@ describe('test/unit/scripts/serverless.test.js', () => {
     }
   });
 
-  it('should throw meaningful error on unrecognized command for custom provider', async () => {
-    try {
-      await spawn('node', [serverlessPath, 'foo'], {
-        cwd: (await programmaticFixturesEngine.setup('custom-provider')).servicePath,
-      });
-      throw new Error('Unexpected');
-    } catch (error) {
-      if (!error.code) throw error;
-      expect(error.code).to.equal(1);
-      expect(String(error.stdoutBuffer)).to.include('command "foo" not found');
-    }
-  });
-
   it('should show help when requested and in context of invalid service configuration', async () => {
     const output = String(
       (
         await spawn('node', [serverlessPath, '--help'], {
-          cwd: path.resolve(programmaticFixturesPath, 'config-invalid'),
+          cwd: path.resolve(programmaticFixturesPath, 'configInvalid'),
         })
       ).stdoutBuffer
     );

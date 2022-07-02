@@ -1,5 +1,7 @@
 <!--
-title: Serverless Framework Variables
+title: Serverless Variables
+menuText: Variables
+menuOrder: 11
 description: How to use Serverless Variables to insert dynamic configuration info into your serverless.yml
 layout: Doc
 -->
@@ -15,6 +17,9 @@ layout: Doc
 Variables allow users to dynamically replace config values in `serverless.yml` config.
 
 They are especially useful when providing secrets for your service to use and when you are working with multiple stages.
+
+If `unresolvedVariablesNotificationMode` is set to `error`, references to variables that cannot be resolved will result in an error being thrown.
+This will become the default behaviour in the next major version.
 
 ## Syntax
 
@@ -283,10 +288,13 @@ Buckets from all regions can be used without any additional specification due to
 
 ## Reference Variables using the SSM Parameter Store
 
+_Note: Ensure to add `variablesResolutionMode: 20210326` to your service configuration, to enable complete support for "ssm" variables resolution._
+
 You can reference SSM Parameters as the source of your variables with the `ssm:/path/to/param` syntax. For example:
 
 ```yml
 service: ${ssm:/path/to/service/id}-service
+variablesResolutionMode: 20210326
 provider:
   name: aws
 functions:
@@ -301,6 +309,7 @@ You can also reference SSM Parameters in another region with the `ssm(REGION):/p
 
 ```yml
 service: ${ssm(us-west-2):/path/to/service/id}-service
+variablesResolutionMode: 20210326
 provider:
   name: aws
 functions:
@@ -338,7 +347,7 @@ The region used by the Serverless CLI. The `${aws:region}` variable is a shortcu
 
 ### Resolution of non plain string types
 
-Other types as `SecureString` and `StringList` are automatically resolved into expected forms.
+New variable resolver, ensures that automatically other types as `SecureString` and `StringList` are resolved into expected forms.
 
 #### Auto decrypting of `SecureString` type parameters.
 
@@ -352,6 +361,7 @@ Variables in [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/) can 
 
 ```yml
 service: new-service
+variablesResolutionMode: 20210326
 provider: aws
 functions:
   hello:
@@ -381,6 +391,7 @@ variables will be resolved like
 
 ```yml
 service: new-service
+variablesResolutionMode: 20210326
 provider: aws
 functions:
   hello:
@@ -401,6 +412,7 @@ Same `StringList` type parameters are automatically detected and resolved to arr
 
 ```yml
 service: new-service
+variablesResolutionMode: 20210326
 provider: aws
 functions:
   hello:
@@ -510,9 +522,11 @@ functions:
 
 ### Exporting a function
 
-_Note: the method described below works by default in Serverless v3, but it requires the `variablesResolutionMode: 20210326` option in v2._
+#### With a new variables resolver
 
-A variable resolver function receives an object with the following properties:
+_Note: works only with `variablesResolutionMode: 20210326` set in service configuration_
+
+With a new variables resolver (_which will be the only used resolver in v3 of a Framework_) functions receives an object, with following properties:
 
 - `options` - An object referencing resolved CLI params as passed to the command
 - `resolveVariable(variableString)` - Async function which resolves provided variable string. String should be passed without wrapping (`${` and `}`) braces. Example valid values:
@@ -520,43 +534,117 @@ A variable resolver function receives an object with the following properties:
   - `env:SOME_ENV_VAR, null` (end with `, null`, if missing value at the variable source should be resolved with `null`, and not with a thrown error)
 - `resolveConfigurationProperty([key1, key2, ...keyN])` - Async function which resolves specific service configuration property. It returns a fully resolved value of configuration property. If circular reference is detected resolution will be rejected.
 
-The resolver function can either be _sync_ or _async_. Note that both `resolveConfigurationProperty` and `resolveVariable` functions are async: if these functions are called, the resolver function must be async.
+Resolver function can be either _sync_ or _async_. Still both `resolveConfigurationProperty` and `resolveVariable` utils provided to it are _async_, so if there's an intention to rely on it naturally resolver function should be _async_.
 
-Here is an example of a resolver function:
+Example on how to obtain some Serverless Framework configuration values:
 
 ```js
-// config.js
+// config.js (when relying on new variables resolver)
 module.exports = async ({ options, resolveVariable }) => {
-  // We can resolve other variables via `resolveVariable`
   const stage = await resolveVariable('sls:stage');
   const region = await resolveVariable('opt:region, self:provider.region, "us-east-1"');
   ...
 
   // Resolver may return any JSON value (null, boolean, string, number, array or plain object)
   return {
-    prop1: 'someValue',
-    prop2: 'someOther value'
+    prop1: someValue // if we want to directly access this value, variable should be constructed as ${file(./config):prop1}
+    prop2: someOther value
   }
 }
 ```
 
-It is possible to reference the resolver's returned value:
+#### With a legacy (deprecated) resolver
+
+In old legacy resolver (deprecated, but still default in v2) function receives a reference to the Serverless object containing your configuration.
+
+_**Notice:** Configuration is yet in unresolved state, so any properties configured with variables may still be presented with variables in it_
+
+```js
+// config.js (when relying on legacy resolver)
+module.exports = (serverless) => {
+  serverless.cli.consoleLog('You can access Serverless config at serverless.configrationInput');
+
+  return {
+    property1: 'some value',
+    property2: 'some other value',
+  };
+};
+```
 
 ```yml
 # serverless.yml
 service: new-service
+provider: aws
 
 custom: ${file(./config.js)}
 ```
 
-Or a single property (if the resolver returned an object):
+You can also return an object and reference a specific property. Just make sure you are returning a valid object and referencing a valid property:
 
 ```yml
 # serverless.yml
 service: new-service
+provider: aws
+functions:
+  scheduledFunction:
+    handler: handler.scheduledFunction
+    events:
+      - schedule: ${file(./myCustomFile.js):schedule.ten}
+```
 
+```js
+// myCustomFile.js
+module.exports.schedule = () => {
+  // Code that generates dynamic data
+  return {
+    ten: 'rate(10 minutes)',
+    twenty: 'rate(20 minutes)',
+    thirty: 'rate(30 minutes)',
+  };
+};
+```
+
+If your use case requires handling dynamic/async data sources (ie. DynamoDB, API calls...etc), you can also return a Promise that would be resolved as the value of the variable:
+
+```yml
+# serverless.yml
+service: new-service
+provider: aws
+functions:
+  scheduledFunction:
+    handler: handler.scheduledFunction
+    events:
+      - schedule: ${file(./myCustomFile.js):promised}
+```
+
+```js
+// myCustomFile.js
+module.exports.promised = () => {
+  // Async code that fetches the rate config...
+  return Promise.resolve('rate(10 minutes)');
+};
+```
+
+For example, in such helper you could call AWS SDK to get account details:
+
+```js
+// myCustomFile.js
+const { STS } = require('aws-sdk');
+const sts = new STS();
+
+module.exports.getAccountId = async () => {
+  // Checking AWS user details
+  const { Account } = await sts.getCallerIdentity().promise();
+  return Account;
+};
+```
+
+```yml
+# serverless.yml
+service: new-service
+provider: aws
 custom:
-  foo: ${file(./config.js):prop1}
+  accountId: ${file(./myCustomFile.js):getAccountId}
 ```
 
 ## Multiple Configuration Files

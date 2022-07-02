@@ -11,27 +11,21 @@
 const isMainModule = !EvalError.$serverlessCommandStartTime;
 if (isMainModule) EvalError.$serverlessCommandStartTime = process.hrtime();
 
-const nodeVersionMajor = Number(process.version.split('.')[0].slice(1));
-const nodeVersionMinor = Number(process.version.split('.')[1]);
-const minimumSupportedVersionMajor = 12;
-const minimumSupportedVersionMinor = 13;
+const nodeVersion = Number(process.version.split('.')[0].slice(1));
+const minimumSupportedVersion = 12;
 
-if (
-  nodeVersionMajor < minimumSupportedVersionMajor ||
-  (nodeVersionMajor === minimumSupportedVersionMajor &&
-    nodeVersionMinor < minimumSupportedVersionMinor)
-) {
+if (nodeVersion < minimumSupportedVersion) {
   const serverlessVersion = Number(require('../package.json').version.split('.')[0]);
   process.stderr.write(
     `\x1b[91mError: Serverless Framework v${serverlessVersion} does not support ` +
-      `Node.js ${process.version}. Please upgrade Node.js to the latest ` +
-      `LTS version (v${minimumSupportedVersionMajor}.${minimumSupportedVersionMinor}.0 is a minimum supported version)\x1b[39m\n`
+      `Node.js v${nodeVersion}. Please upgrade Node.js to the latest ` +
+      `LTS version (v${minimumSupportedVersion} is a minimum supported version)\x1b[39m\n`
   );
   process.exit(1);
 }
 
 if (isMainModule) {
-  if (require('../lib/utils/is-standalone-executable')) {
+  if (require('../lib/utils/isStandaloneExecutable')) {
     require('../lib/utils/standalone-patch');
     if (process.argv[2] === 'binary-postinstall' && process.argv.length === 3) {
       require('../scripts/postinstall');
@@ -41,6 +35,7 @@ if (isMainModule) {
 
   const path = require('path');
   const localInstallationPath = require('../lib/cli/local-serverless-path');
+
   if (localInstallationPath && localInstallationPath !== path.dirname(__dirname)) {
     // Local fallback
     const localServerlessBinPath = (() => {
@@ -71,14 +66,6 @@ require('../lib/cli/triage')().then((cliName) => {
   switch (cliName) {
     case 'serverless':
       require('../scripts/serverless');
-      return;
-    case '@serverless/compose':
-      require('../lib/cli/run-compose')().catch((error) => {
-        // Expose eventual resolution error as regular crash, and not unhandled rejection
-        process.nextTick(() => {
-          throw error;
-        });
-      });
       return;
     case 'serverless-tencent':
       require('../lib/cli/run-serverless-tencent')().catch((error) => {

@@ -53,7 +53,7 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
 
   it('Should be applied if service instance has a linked provider', async () => {
     const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/deploy', {
-      '@serverless/dashboard-plugin/lib/is-authenticated': () => true,
+      '@serverless/dashboard-plugin/lib/isAuthenticated': () => true,
       './utils': {
         doesServiceInstanceHaveLinkedProvider: () => true,
       },
@@ -61,30 +61,7 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
 
     expect(
       await mockedStep.isApplicable({
-        configuration: { provider: { name: 'aws' }, org: 'someorg', app: 'someapp' },
-        serviceDir: '/foo',
-        options: {},
-        history: new Map([['awsCredentials', []]]),
-      })
-    ).to.equal(true);
-  });
-
-  it('Should be applied if service instance has a linked provider but disabled dashboard monitoring', async () => {
-    const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/deploy', {
-      '@serverless/dashboard-plugin/lib/is-authenticated': () => true,
-      './utils': {
-        doesServiceInstanceHaveLinkedProvider: () => true,
-      },
-    });
-
-    expect(
-      await mockedStep.isApplicable({
-        configuration: {
-          provider: { name: 'aws' },
-          org: 'someorg',
-          app: 'someapp',
-          dashboard: { disableMonitoring: true },
-        },
+        configuration: { provider: { name: 'aws' }, org: 'someorg' },
         serviceDir: '/foo',
         options: {},
         history: new Map([['awsCredentials', []]]),
@@ -106,7 +83,6 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
         },
         configurationFilename: 'serverless.yml',
         stepHistory: new StepHistory(),
-        history: new Map(),
         initial: {
           isInServiceContext: false,
         },
@@ -129,7 +105,6 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
         },
         configurationFilename: 'serverless.yml',
         stepHistory: new StepHistory(),
-        history: new Map(),
         initial: {
           isInServiceContext: true,
         },
@@ -154,7 +129,6 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
         },
         configurationFilename: 'serverless.yml',
         stepHistory: new StepHistory(),
-        history: new Map(),
         initial: {
           isInServiceContext: false,
         },
@@ -179,7 +153,6 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
         },
         configurationFilename: 'serverless.yml',
         stepHistory: new StepHistory(),
-        history: new Map(),
         initial: {
           isInServiceContext: true,
         },
@@ -212,7 +185,7 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
       }
 
       const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/deploy', {
-        '../../serverless': MockedServerless,
+        '../../Serverless': MockedServerless,
         '@serverless/dashboard-plugin/lib/dashboard': {
           getDashboardInteractUrl: () => 'https://app.serverless-dev.com/path/to/dashboard',
         },
@@ -232,7 +205,6 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
         },
         configurationFilename: 'serverless.yml',
         stepHistory: new StepHistory(),
-        history: new Map(),
         initial: {
           isInServiceContext: false,
         },
@@ -265,7 +237,7 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
       }
 
       const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/deploy', {
-        '../../serverless': MockedServerless,
+        '../../Serverless': MockedServerless,
         '@serverless/dashboard-plugin/lib/dashboard': {
           getDashboardInteractUrl: () => 'https://app.serverless-dev.com/path/to/dashboard',
         },
@@ -285,7 +257,6 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
         },
         configurationFilename: 'serverless.yml',
         stepHistory: new StepHistory(),
-        history: new Map(),
         initial: {
           isInServiceContext: true,
         },
@@ -317,7 +288,7 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
       }
 
       const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/deploy', {
-        '../../serverless': MockedServerless,
+        '../../Serverless': MockedServerless,
       });
 
       configureInquirerStub(inquirer, {
@@ -332,7 +303,6 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
         },
         configurationFilename: 'serverless.yml',
         stepHistory: new StepHistory(),
-        history: new Map(),
         initial: {
           isInServiceContext: false,
         },
@@ -364,7 +334,7 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
       }
 
       const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/deploy', {
-        '../../serverless': MockedServerless,
+        '../../Serverless': MockedServerless,
       });
 
       configureInquirerStub(inquirer, {
@@ -379,7 +349,6 @@ describe('test/unit/lib/cli/interactive-setup/deploy.test.js', () => {
         },
         configurationFilename: 'serverless.yml',
         stepHistory: new StepHistory(),
-        history: new Map(),
         initial: {
           isInServiceContext: true,
         },

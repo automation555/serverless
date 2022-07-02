@@ -12,7 +12,7 @@ const sinon = require('sinon');
 const overrideEnv = require('process-utils/override-env');
 
 const AwsProvider = require('../../../../../lib/plugins/aws/provider');
-const Serverless = require('../../../../../lib/serverless');
+const Serverless = require('../../../../../lib/Serverless');
 const runServerless = require('../../../../utils/run-serverless');
 
 chai.use(require('chai-as-promised'));
@@ -166,8 +166,10 @@ describe('AwsProvider', () => {
   describe('#request()', () => {
     let awsRequestStub;
     let awsProviderProxied;
+    let logStub;
 
     beforeEach(() => {
+      logStub = sinon.stub();
       awsRequestStub = sinon.stub().resolves();
       awsRequestStub.memoized = sinon.stub().resolves();
       const AwsProviderProxyquired = proxyquire
@@ -175,6 +177,9 @@ describe('AwsProvider', () => {
         .load('../../../../../lib/plugins/aws/provider.js', {
           '../../aws/request': awsRequestStub,
           '@serverless/utils/log': {
+            legacy: {
+              log: logStub,
+            },
             log: {
               debug: sinon.stub(),
             },
@@ -215,6 +220,21 @@ describe('AwsProvider', () => {
         .then(() => {
           expect(awsRequestStub).to.not.have.been.called;
           expect(awsRequestStub.memoized).to.have.been.calledTwice;
+        });
+    });
+
+    it('should detect incompatible legacy use of aws request and print a debug warning', () => {
+      // Enable debug log
+      process.env.SLS_DEBUG = true;
+      return awsProviderProxied
+        .request('S3', 'getObject', {}, 'incompatible string option')
+        .then(() => {
+          expect(logStub).to.have.been.calledWith(
+            'WARNING: Inappropriate call of provider.request()'
+          );
+        })
+        .finally(() => {
+          process.env.SLS_DEBUG = false;
         });
     });
   });
@@ -1034,7 +1054,7 @@ aws_secret_access_key = CUSTOMSECRET
       let naming;
       let serviceConfig;
       const imageSha = '6bb600b4d6e1d7cf521097177dd0c4e9ea373edb91984a505333be8ac9455d38';
-      const imageWithSha = `000000000000.dkr.ecr.us-east-1.amazonaws.com/test-lambda-docker@sha256:${imageSha}`;
+      const imageWithSha = `000000000000.dkr.ecr.sa-east-1.amazonaws.com/test-lambda-docker@sha256:${imageSha}`;
       const imageDigestFromECR =
         'sha256:2e6b10a4b1ca0f6d3563a8a1f034dde7c4d7c93b50aa91f24311765d0822186b';
       const describeImagesStub = sinon
@@ -1066,11 +1086,11 @@ aws_secret_access_key = CUSTOMSECRET
                 image: imageWithSha,
               },
               fnImageWithTag: {
-                image: '000000000000.dkr.ecr.us-east-1.amazonaws.com/test-lambda-docker:stable',
+                image: '000000000000.dkr.ecr.sa-east-1.amazonaws.com/test-lambda-docker:stable',
               },
               fnImageWithTagAndRepoWithSlashes: {
                 image:
-                  '000000000000.dkr.ecr.us-east-1.amazonaws.com/test-lambda/repo-docker:stable',
+                  '000000000000.dkr.ecr.sa-east-1.amazonaws.com/test-lambda/repo-docker:stable',
               },
               fnImageWithExplicitUri: {
                 image: {
@@ -1195,27 +1215,6 @@ aws_secret_access_key = CUSTOMSECRET
         const versionCfConfig = findVersionCfConfig(cfResources, functionCfLogicalId);
         expect(versionCfConfig.CodeSha256).to.equal(imageSha);
       });
-
-      it('should fail when `functions[].image` when image uri region does not match the provider region', async () => {
-        const imageRegion = 'sa-east-1';
-        const imageWithoutSha = `000000000000.dkr.ecr.${imageRegion}.amazonaws.com/test-lambda-docker`;
-        await expect(
-          runServerless({
-            fixture: 'function',
-            command: 'package',
-            configExt: {
-              provider: {
-                region: 'us-east-1',
-              },
-              functions: {
-                fnImageWithExplicitUriInvalidRegion: {
-                  image: imageWithoutSha,
-                },
-              },
-            },
-          })
-        ).to.be.eventually.rejected.and.have.property('code', 'LAMBDA_ECR_REGION_MISMATCH_ERROR');
-      });
     });
 
     describe('with `functions[].image` referencing images that require building', () => {
@@ -1254,7 +1253,7 @@ aws_secret_access_key = CUSTOMSECRET
       });
       const modulesCacheStub = {
         'child-process-ext/spawn': spawnExtStub,
-        './lib/utils/telemetry/generate-payload.js': () => ({}),
+        './lib/utils/telemetry/generatePayload.js': () => ({}),
       };
 
       beforeEach(() => {

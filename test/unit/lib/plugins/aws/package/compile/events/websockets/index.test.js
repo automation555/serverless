@@ -4,7 +4,7 @@ const expect = require('chai').expect;
 const sinon = require('sinon');
 const AwsProvider = require('../../../../../../../../../lib/plugins/aws/provider');
 const AwsCompileWebsocketsEvents = require('../../../../../../../../../lib/plugins/aws/package/compile/events/websockets/index');
-const Serverless = require('../../../../../../../../../lib/serverless');
+const Serverless = require('../../../../../../../../../lib/Serverless');
 const runServerless = require('../../../../../../../../utils/run-serverless');
 
 describe('AwsCompileWebsocketsEvents', () => {
@@ -123,11 +123,6 @@ describe('test/unit/lib/plugins/aws/package/compile/events/websockets/index.test
         command: 'package',
 
         configExt: {
-          provider: {
-            websocket: {
-              useProviderTags: true,
-            },
-          },
           functions: {
             basic: {
               events: [
@@ -162,56 +157,6 @@ describe('test/unit/lib/plugins/aws/package/compile/events/websockets/index.test
         Effect: 'Allow',
         Action: ['execute-api:ManageConnections'],
         Resource: [{ 'Fn::Sub': 'arn:${AWS::Partition}:execute-api:*:*:*/@connections/*' }],
-      });
-    });
-  });
-
-  describe('regular configuration with tags', () => {
-    let cfTemplate;
-    let awsNaming;
-    before(async () => {
-      ({ cfTemplate, awsNaming } = await runServerless({
-        fixture: 'function',
-        command: 'package',
-
-        configExt: {
-          provider: {
-            stackTags: {
-              stack_tag: 'foo',
-            },
-            tags: {
-              tag: 'bar',
-            },
-            websocket: {
-              useProviderTags: true,
-            },
-          },
-          functions: {
-            basic: {
-              events: [
-                {
-                  websocket: '$connect',
-                },
-              ],
-            },
-          },
-        },
-      }));
-    });
-
-    it('should create a websocket api resource with tags', () => {
-      const websocketsApiName = awsNaming.getWebsocketsApiName();
-      expect(cfTemplate.Resources.WebsocketsApi).to.deep.equal({
-        Type: 'AWS::ApiGatewayV2::Api',
-        Properties: {
-          Name: websocketsApiName,
-          RouteSelectionExpression: '$request.body.action',
-          Description: 'Serverless Websockets',
-          ProtocolType: 'WEBSOCKET',
-          Tags: {
-            tag: 'bar',
-          },
-        },
       });
     });
   });

@@ -2,7 +2,7 @@
 
 const expect = require('chai').expect;
 const Metrics = require('../../../../lib/plugins/metrics');
-const Serverless = require('../../../../lib/serverless');
+const Serverless = require('../../../../lib/Serverless');
 
 describe('Metrics', () => {
   let metrics;

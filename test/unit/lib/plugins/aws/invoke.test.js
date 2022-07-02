@@ -34,9 +34,7 @@ describe('test/unit/lib/plugins/aws/invoke.test.js', () => {
             invoke: (args) => {
               lambdaInvokeStub.returns({
                 Payload: args.Payload,
-                LogResult: Buffer.from(
-                  'testlogline\nSERVERLESS_ENTERPRISE enterpriseline'
-                ).toString('base64'),
+                LogResult: Buffer.from('test').toString('base64'),
               });
               return lambdaInvokeStub(args);
             },
@@ -64,13 +62,8 @@ describe('test/unit/lib/plugins/aws/invoke.test.js', () => {
       });
     });
 
-    it('should include payload response in output', () => {
+    it('should log payload', () => {
       expect(result.output).to.contain('"inputKey": "inputValue"');
-    });
-
-    it('should include logs in output', () => {
-      expect(result.output).to.contain('testlogline');
-      expect(result.output).not.to.contain('enterpriseline');
     });
   });
 

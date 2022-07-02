@@ -4,7 +4,7 @@ const expect = require('chai').expect;
 const _ = require('lodash');
 
 const SDK = require('../../../../../../lib/plugins/aws/provider');
-const Serverless = require('../../../../../../lib/serverless');
+const Serverless = require('../../../../../../lib/Serverless');
 
 describe('#naming()', () => {
   let options;
@@ -448,12 +448,8 @@ describe('#naming()', () => {
   describe('#getEndpointModelLogicalId()', () => {
     it('', () => {
       expect(
-        sdk.naming.getEndpointModelLogicalId(
-          'ResourceId',
-          'get',
-          'application/x-www-form-urlencoded'
-        )
-      ).to.equal('ApiGatewayMethodResourceIdGetApplicationXWwwFormUrlencodedModel');
+        sdk.naming.getEndpointModelLogicalId('ResourceId', 'get', 'application/json')
+      ).to.equal('ApiGatewayMethodResourceIdGetApplicationJsonModel');
     });
   });
 
@@ -1044,14 +1040,6 @@ describe('#naming()', () => {
     it('should normalize the name and append correct suffix', () => {
       expect(sdk.naming.getLambdaAuthorizerHttpApiPermissionLogicalId('authorizerName')).to.equal(
         'AuthorizerNameLambdaAuthorizerPermissionHttpApi'
-      );
-    });
-  });
-
-  describe('#getLambdaFnUrlPermissionLogicalId()', () => {
-    it('should normalize the name and append correct suffix', () => {
-      expect(sdk.naming.getLambdaFnUrlPermissionLogicalId('fnName')).to.equal(
-        'FnNameLambdaPermissionFnUrl'
       );
     });
   });

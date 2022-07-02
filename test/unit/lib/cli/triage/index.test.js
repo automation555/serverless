@@ -57,7 +57,7 @@ describe('test/unit/lib/cli/triage/index.test.js', () => {
     });
     after(() => restoreArgv());
 
-    for (const cliName of ['serverless', '@serverless/cli', '@serverless/compose']) {
+    for (const cliName of ['serverless', '@serverless/cli']) {
       for (const extension of fs.readdirSync(path.resolve(fixturesDirname, cliName))) {
         for (const fixtureName of fs.readdirSync(
           path.resolve(fixturesDirname, cliName, extension)
@@ -95,41 +95,5 @@ describe('test/unit/lib/cli/triage/index.test.js', () => {
         register('@serverless/components', 'us');
       }
     }
-  });
-
-  describe('Service configuration with CLI params', () => {
-    describe('regular commands', () => {
-      let restoreArgv;
-      before(() => {
-        ({ restoreArgv } = overrideArgv({ args: ['sls', 'login'] }));
-      });
-      after(() => restoreArgv());
-
-      it('should not resolve to `@serverless/compose` with compose config present when command should be ignored', async () => {
-        await overrideCwd(
-          path.resolve(fixturesDirname, '@serverless/compose', 'yml', 'project'),
-          async () => {
-            expect(await triage()).to.equal('serverless');
-          }
-        );
-      });
-    });
-
-    describe('--help handling', () => {
-      let restoreArgv;
-      before(() => {
-        ({ restoreArgv } = overrideArgv({ args: ['sls', '--help'] }));
-      });
-      after(() => restoreArgv());
-
-      it('should resolve to `@serverless/compose` with `--help` when compose config present', async () => {
-        await overrideCwd(
-          path.resolve(fixturesDirname, '@serverless/compose', 'yml', 'project'),
-          async () => {
-            expect(await triage()).to.equal('@serverless/compose');
-          }
-        );
-      });
-    });
   });
 });

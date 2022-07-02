@@ -9,7 +9,7 @@ const AdmZip = require('adm-zip');
 const { deployService, removeService } = require('../utils/integration');
 const fixturesEngine = require('../fixtures/programmatic');
 
-const serverlessExec = require('../serverless-binary');
+const serverlessExec = require('../serverlessBinary');
 
 describe('test/integration/curated-plugins.test.js', function () {
   this.timeout(1000 * 60 * 10); // Involves time-taking npm install
@@ -44,7 +44,7 @@ describe('test/integration/curated-plugins.test.js', function () {
     let output = '';
     slsProcess.stderr.on('data', function self(data) {
       output += data;
-      if (output.includes('Server ready:')) {
+      if (output.includes('server ready:')) {
         slsProcess.stderr.off('data', self);
         got('http://localhost:3000/dev/foo')
           .json()
@@ -78,7 +78,7 @@ describe('test/integration/curated-plugins.test.js', function () {
     const { stderrBuffer } = await spawn(serverlessExec, ['prune', '-n', '10'], {
       cwd: serviceDir,
     });
-    expect(String(stderrBuffer)).to.include('Pruning of functions complete');
+    expect(String(stderrBuffer)).to.include('Prune: Pruning complete.');
   });
 
   it('should be extended by "serverless-dotenv-plugin"', async () => {

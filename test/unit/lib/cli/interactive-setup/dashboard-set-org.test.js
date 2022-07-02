@@ -98,7 +98,7 @@ describe('test/unit/lib/cli/interactive-setup/dashboard-set-org.test.js', functi
       '@serverless/platform-client': {
         ServerlessSDK: ServerlessSDKMock,
       },
-      '@serverless/dashboard-plugin/lib/client-utils': {
+      '@serverless/dashboard-plugin/lib/clientUtils': {
         getPlatformClientWithAccessKey: async () => new ServerlessSDKMock(),
         getOrCreateAccessKeyForOrg: async () => 'accessKey',
       },
@@ -119,19 +119,6 @@ describe('test/unit/lib/cli/interactive-setup/dashboard-set-org.test.js', functi
     };
     expect(await step.isApplicable(context)).to.be.false;
     expect(context.inapplicabilityReasonCode).to.equal('NOT_IN_SERVICE_DIRECTORY');
-  });
-
-  it('Should be ineffective, when in console context', async () => {
-    const context = {
-      initial: {},
-      serviceDir: process.cwd(),
-      configuration: {},
-      configurationFilename: 'serverless.yml',
-      options: { console: true },
-      isConsole: true,
-    };
-    expect(await step.isApplicable(context)).to.be.false;
-    expect(context.inapplicabilityReasonCode).to.equal('CONSOLE_CONTEXT');
   });
 
   it('Should be ineffective, when not at AWS service path', async () => {

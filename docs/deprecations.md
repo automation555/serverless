@@ -36,16 +36,6 @@ Note:
 - The `serverless.yml` setting is ineffective for deprecations reported before the configuration is read.
 - `SLS_DEPRECATION_DISABLE` and `disabledDeprecations` remain respected, and no errors will be thrown for mentioned deprecation codes.
 
-<a name="VARIABLES_RESOLUTION_MODE"><div>&nbsp;</div></a>
-
-## Property `variablesResolutionMode`
-
-Deprecation code: `VARIABLES_RESOLUTION_MODE`
-
-Starting with v4.0.0, Serverless will no longer recognize `variablesResolutionMode`, as supported configuration property. Drop it to avoid validation errors
-
-Learn more about configuration validation here: http://slss.io/configuration-validation
-
 <a name="PROJECT_DIR"><div>&nbsp;</div></a>
 
 ## Property `projectDir`
@@ -116,26 +106,17 @@ Deprecation code: `CLI_DEPLOY_FUNCTION_OPTION_V3`
 
 Starting with `v4.0.0`, `--function` or `-f` option for `deploy` command will no longer be supported. In order to deploy a single function, please use `deploy function` command instead.
 
-<a name="AWS_WEBSOCKET_API_USE_PROVIDER_TAGS"><div>&nbsp;</div></a>
-
-## Property `provider.websocket.useProviderTags`
-
-Deprecation code: `AWS_WEBSOCKET_API_USE_PROVIDER_TAGS`
-
-Starting with v4.0.0, `provider.tags` will be applied to Websocket Api Gateway by default
-Set `provider.websocket.useProviderTags` to `true` to adapt to the new behavior now.
-
 <a name="LAMBDA_HASHING_VERSION_PROPERTY"><div>&nbsp;</div></a>
 
 ## Property `provider.lambdaHashingVersion`
 
 Deprecation code: `LAMBDA_HASHING_VERSION_PROPERTY`
 
-Lambda version hashes were improved with a better algorithm (that fixed determinism issues). It is used by default starting with v3.0.0.
+Lambda version hashes were improved with a better algorithm (that fixed determinism issues), which is used by default, starting with v3.0.0.
 
-If you previously opted-in to use new algorithm by setting `provider.lambdaHashingVersion: 20201221`, you can safely remove that property from your configuration in v3.
+If you previously opted-in to use new algorithm by setting `provider.lambdaHashingVersion` to `20201221`, you can safely remove that property from your configuration to silence the deprecation.
 
-To get more details, read [the v3 upgrade guide](./guides/upgrading-v3.md#lambda-hashing-algorithm).
+The old `20200924` algorithm is deprecated and it is recommended to migrate to the new version. In order to do that, you can follow the guide in [Functions Docs](./providers/aws/guide/functions.md#lambda-hashing-algorithm-migration).
 
 <a name="AwS_EVENT_BRIDGE_CUSTOM_RESOURCE_LEGACY_OPT_IN"><div>&nbsp;</div></a>
 
@@ -255,21 +236,23 @@ Check [Packaging Patterns](/framework/docs/providers/aws/guide/packaging/#patter
 
 Deprecation code: `UNSUPPORTED_CLI_OPTIONS`
 
-CLI options validation was introduced to detect typos and mistakes. That required dropping support for _free-form_ CLI options in v3 (because free-form CLI options cannot be validated).
+Framework was upgraded with extensive CLI options validation and that required dropping support for _free form_ CLI options (keeping that in will make not possible to reliably detect accidental typos in option names).
 
-An alternative to free-form CLI options is to use [environment variables](./providers/aws/guide/variables#referencing-environment-variables). Another option is to use [the `--param` option](./guides/parameters#cli-parameters) introduced in Serverless Framework **v3.3.0**:
+For _free form_ process configuration options it is advised to rely on environment variables instead, as e.g.:
 
 ```yaml
 provider:
-  environement:
-    APP_DOMAIN: ${param:domain, 'preview.myapp.com'}
+  stackName: ${env:STACK_NAME, 'T001'}
 ```
 
 ```bash
-sls deploy --param="domain=myapp.com"
+STACK_NAME=test sls deploy
 ```
 
-Starting with v3.0.0, Serverless throws an error in case of unknown CLI options.
+_Note that setup of environment variables is way more
+convenient since we've added support for [`.env`](/framework/docs/environment-variables#support-for-env-files) files._
+
+Starting with v3.0.0, Serverless will report unrecognized options with a thrown error.
 
 <a name="CLI_OPTIONS_BEFORE_COMMAND"><div>&nbsp;</div></a>
 
@@ -319,22 +302,11 @@ If you want to keep using the old deployment method for your AWS EventBridge res
 
 Deprecation code: `NEW_VARIABLES_RESOLVER`
 
-A more robust and powerful variable resolver engine was introduced (disabled by default) in Serverless Framework v2. It is used by default in v3.
+Framework was updated with a new implementation of variables resolver.
 
-It supports the same variables with the same syntax. The main impacts are:
+It supports very same variable syntax, and is being updated with support for same resolution sources. Still as it has improved internal resolution rules (which leave no room for ambiguity) in some edge cases it may report errors on which old parser passed by.
 
-- Some edge cases (ambiguous configuration) now throw errors
-- A very small share of unmaintained plugins haven't been updated to support the new engine
-
-You can prepare the upgrade from v2 to v3 by enabling the new engine:
-
-```yaml
-# serverless.yml
-service: myapp
-variablesResolutionMode: 20210326
-```
-
-In v3, the `variablesResolutionMode` option can be removed as the new engine becomes the default.
+It's recommended to expose all errors that eventually new resolver may report (those will be an unconditional errors in v3). You can turn that behavior on by adding `variablesResolutionMode: 20210326` to service configuration
 
 <a name="AWS_HTTP_API_USE_PROVIDER_TAGS"><div>&nbsp;</div></a>
 
@@ -416,7 +388,7 @@ In context of v2 you may adapt old variables resolver so errors on unresolved va
 
 Deprecation code: `PROVIDER_IAM_SETTINGS`
 
-_Note: Originally, support for the legacy IAM settings format was scheduled to be dropped in v3. However, it's no longer the case. If you see this deprecation notice please upgrade to the latest version of Serverless Framework v2._
+_Note: Originally support for old IAM settings was scheduled to be dropped with new major release. It's no longer the case. If you see this deprecation notice please upgrade to latest version of Serverless Framework_
 
 All IAM-related settings of _provider_ including `iamRoleStatements`, `iamManagedPolicies`, `role` and `cfnRole` are also now supported at `iam` property. Refer to the [IAM Guide](/framework/docs/providers/aws/guide/iam.md).
 
@@ -452,14 +424,21 @@ Org, app, service, stage, and region are required to resolve variables when logg
 
 Deprecation code: `LAMBDA_HASHING_VERSION_V2`
 
-Lambda version hashes were improved with a more robust algorithm (that fixes determinism issues). It is used by default starting with v3.0.0.
+Lambda version hashes were improved with a better algorithm (that fixed determinism issues). It will be used by default starting with v3.0.0.
 
-You can either:
+You can adapt your services to use it now by setting `provider.lambdaHashingVersion` to `20201221`.
 
-- keep using the deprecated algorithm in v3 (easy upgrade),
-- or upgrade to the new algorithm (recommended).
+While not recommended, you can keep using the old hashing algorithm by setting `provider.lambdaHashingVersion` to `20200924`. That will silence the deprecation and allow to upgrade to v3.
 
-Read [the instructions in the v3 upgrade guide](./guides/upgrading-v3.md#lambda-hashing-algorithm).
+**Notice:** If you apply this on already deployed service without any changes to lambda code, you might encounter an error similar to the one below:
+
+```
+  Serverless Error ---------------------------------------
+
+  An error occurred: FooLambdaVersion3IV5NZ3sE5T2UFimCOai2Tc6eCaW7yIYOP786U0Oc - A version for this Lambda function exists ( 11 ). Modify the function to create a new version..
+```
+
+It is an expected behavior. AWS complains here that received a different hash for very same lambda configuration. To workaround that, you need to modify your function(s) code and try to redeploy it again. One common approach is to modify an utility function that is used by all/most of your Lambda functions. There's also a semi-automated migration available and described in [V3 Upgrade docs](./guides/upgrading-v3.md#lambda-hashing-algorithm).
 
 <a name="LOAD_VARIABLES_FROM_ENV_FILES"><div>&nbsp;</div></a>
 
@@ -579,7 +558,7 @@ Deprecation code: `AWS_FUNCTION_DESTINATIONS_ASYNC_CONFIG`
 
 Deprecation code: `AWS_HTTP_API_VERSION`
 
-Default HTTP API Payload version will be switched to 2.0 with v3 (For more details see [payload format documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html#http-api-develop-integrations-lambda.proxy-format)).
+Default HTTP API Payload version will be switched to 2.0 with next major release (For more details see [payload format documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html#http-api-develop-integrations-lambda.proxy-format))
 
 Configure `httpApi.payload` explicitly to ensure seamless migration.
 

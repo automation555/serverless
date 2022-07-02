@@ -2,7 +2,7 @@
 
 const chai = require('chai');
 const Remove = require('../../../../lib/plugins/remove');
-const Serverless = require('../../../../lib/serverless');
+const Serverless = require('../../../../lib/Serverless');
 
 const expect = chai.expect;
 
