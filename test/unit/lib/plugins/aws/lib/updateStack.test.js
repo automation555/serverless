@@ -1,11 +1,37 @@
 'use strict';
 
-const expect = require('chai').expect;
+const chai = require('chai');
 const sinon = require('sinon');
 const AwsProvider = require('../../../../../../lib/plugins/aws/provider');
 const AwsDeploy = require('../../../../../../lib/plugins/aws/deploy');
 const Serverless = require('../../../../../../lib/Serverless');
 const { getTmpDirPath } = require('../../../../../utils/fs');
+const runServerless = require('../../../../../utils/run-serverless');
+
+const { expect } = chai;
+chai.use(require('sinon-chai'));
+
+const awsRequestStubMapBase = {
+  STS: {
+    getCallerIdentity: {
+      ResponseMetadata: { RequestId: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
+      UserId: 'XXXXXXXXXXXXXXXXXXXXX',
+      Account: '999999999999',
+      Arn: 'arn:aws-us-gov:iam::999999999999:user/test',
+    },
+  },
+  S3: {
+    deleteObjects: {},
+    listObjectsV2: { Contents: [] },
+    upload: {},
+  },
+  CloudFormation: {
+    describeStacks: { Stacks: [{}] },
+    describeStackResource: { StackResourceDetail: { PhysicalResourceId: 's3-bucket-resource' } },
+    listStackResources: {},
+    validateTemplate: {},
+  },
+};
 
 describe('updateStack', () => {
   let serverless;
@@ -26,8 +52,7 @@ describe('updateStack', () => {
     awsDeploy.bucketName = 'deployment-bucket';
     serverless.service.service = `service-${new Date().getTime().toString()}`;
     serverless.serviceDir = tmpDirPath;
-    awsDeploy.serverless.service.package.deploymentDirectoryPrefix = 'somedir';
-    awsDeploy.serverless.service.package.timestamp = 'time-stamp';
+    awsDeploy.serverless.service.package.artifactDirectoryName = 'somedir';
     awsDeploy.serverless.cli = new serverless.classes.CLI();
   });
 
@@ -46,7 +71,7 @@ describe('updateStack', () => {
 
     it('should create a stack with the CF template URL', () => {
       const compiledTemplateFileName = 'compiled-cloudformation-template.json';
-      const expectedTemplateUrl = `https://s3.amazonaws.com/${awsDeploy.bucketName}/${awsDeploy.serverless.service.package.deploymentDirectoryPrefix}/${awsDeploy.serverless.service.package.timestamp}/${compiledTemplateFileName}`;
+
       return awsDeploy.createFallback().then(() => {
         expect(createStackStub.calledOnce).to.be.equal(true);
         expect(
@@ -55,7 +80,7 @@ describe('updateStack', () => {
             OnFailure: 'DELETE',
             Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             Parameters: [],
-            TemplateURL: expectedTemplateUrl,
+            TemplateURL: `https://s3.amazonaws.com/${awsDeploy.bucketName}/${awsDeploy.serverless.service.package.artifactDirectoryName}/${compiledTemplateFileName}`,
             Tags: [{ Key: 'STAGE', Value: awsDeploy.provider.getStage() }],
           })
         ).to.be.equal(true);
@@ -142,14 +167,13 @@ describe('updateStack', () => {
     it('should update the stack', () =>
       awsDeploy.update().then(() => {
         const compiledTemplateFileName = 'compiled-cloudformation-template.json';
-        const expectedTemplateUrl = `https://s3.amazonaws.com/${awsDeploy.bucketName}/${awsDeploy.serverless.service.package.deploymentDirectoryPrefix}/${awsDeploy.serverless.service.package.timestamp}/${compiledTemplateFileName}`;
         expect(updateStackStub.calledOnce).to.be.equal(true);
         expect(
           updateStackStub.calledWithExactly('CloudFormation', 'updateStack', {
             StackName: awsDeploy.provider.naming.getStackName(),
             Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             Parameters: [],
-            TemplateURL: expectedTemplateUrl,
+            TemplateURL: `https://s3.amazonaws.com/${awsDeploy.bucketName}/${awsDeploy.serverless.service.package.artifactDirectoryName}/${compiledTemplateFileName}`,
             Tags: [{ Key: 'STAGE', Value: awsDeploy.provider.getStage() }],
           })
         ).to.be.equal(true);
@@ -197,6 +221,38 @@ describe('updateStack', () => {
           '{"Statement":[{"Effect":"Allow","Principal":"*","Action":"Update:*","Resource":"*"}]}'
         );
       });
+    });
+
+    it('should include custom stack policy during updates', async () => {
+      const updateStub = sinon.stub().resolves('alreadyCreated');
+      const stackPolicyDuringUpdate = [
+        {
+          Effect: 'Allow',
+          Principal: '*',
+          Action: ['Update:*'],
+          Resource: '*',
+        },
+      ];
+      await runServerless({
+        config: {
+          service: 'irrelevant',
+          provider: { name: 'aws', region: 'us-east-1', stackPolicyDuringUpdate },
+        },
+        command: 'deploy',
+        lastLifecycleHookName: 'deploy:deploy',
+        awsRequestStubMap: {
+          ...awsRequestStubMapBase,
+          CloudFormation: {
+            ...awsRequestStubMapBase.CloudFormation,
+            updateStack: updateStub,
+          },
+        },
+      });
+
+      expect(updateStub).to.be.calledOnce;
+      expect(updateStub.args[0][0].StackPolicyDuringUpdateBody).to.equal(
+        JSON.stringify({ Statement: stackPolicyDuringUpdate })
+      );
     });
 
     it('should success if no changes to stack happened', () => {
