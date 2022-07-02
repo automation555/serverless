@@ -83,9 +83,6 @@ provider:
   # Optional CloudFormation tags to apply to the stack
   stackTags:
     key: value
-  # Method used for CloudFormation deployments: 'changesets' or 'direct' (default: changesets)
-  # See https://www.serverless.com/framework/docs/providers/aws/guide/deploying#deployment-method
-  deploymentMethod: direct
   # List of existing Amazon SNS topics in the same region where notifications about stack events are sent.
   notificationArns:
     - 'arn:aws:sns:us-east-1:XXXXXX:mytopic'
@@ -240,12 +237,6 @@ provider:
   apiName: custom-api-name
   # Endpoint type for API Gateway REST API: edge or regional (default: edge)
   endpointType: regional
-  # Use a custom name for the websockets API
-  websocketsApiName: custom-websockets-api-name
-  # custom route selection expression
-  websocketsApiRouteSelectionExpression: $request.body.route
-  # Use a custom description for the websockets API
-  websocketsDescription: Custom Serverless Websockets
   # Optional API Gateway REST API global config
   apiGateway:
     # Attach to an externally created REST API via its ID:
@@ -313,6 +304,13 @@ provider:
           name: GlobalModel
           # Optional: Description of the API Gateway model
           description: 'A global model that can be referenced in functions'
+  # Use a custom name for the websockets API
+  websockets:
+    apiName: custom-websockets-api-name
+    # custom route selection expression
+    apiRouteSelectionExpression: $request.body.route
+    # Use a custom description for the websockets API
+    description: Custom Serverless Websockets
 ```
 
 ### ALB
@@ -543,16 +541,8 @@ provider:
     # Enable Websocket API logs
     # This can either be set to `websocket: true` to use defaults, or configured via subproperties.
     websocket:
-      # Enables HTTP access logs (default: true)
-      accessLogging: true
-      # Log format to use for access logs
-      format: 'requestId: $context.requestId'
-      # Enable execution logging (default: true)
-      executionLogging: true
-      # Log level to use for execution logging: INFO or ERROR
+      # Log level to use for execution logging: INFO or ERROR.
       level: INFO
-      # Log full requests/responses for execution logging (default: true)
-      fullExecutionData: true
 
     # Optional, whether to write CloudWatch logs for custom resource lambdas as added by the framework
     frameworkLambda: true
@@ -710,10 +700,6 @@ functions:
       arn: arn:aws:elasticfilesystem:us-east-1:11111111:access-point/fsap-a1a1a1
       # Path under which EFS will be mounted and accessible in Lambda
       localMountPath: /mnt/example
-    # Maximum retry attempts when an asynchronous invocation fails (between 0 and 2; default: 2)
-    maximumRetryAttempts: 1
-    # Maximum event age in seconds when invoking asynchronously (between 60 and 21600)
-    maximumEventAge: 7200
 ```
 
 ## Lambda events
@@ -843,8 +829,6 @@ functions:
           # Set to 'true' when using an existing bucket
           # Else the bucket will be automatically created
           existing: true
-          # Optional, for forcing deployment of triggers on existing S3 buckets
-          forceDeploy: true
 ```
 
 ### Schedule
@@ -968,8 +952,6 @@ functions:
           startingPosition: LATEST
           # (default: true)
           enabled: false
-          # Optional, arn of the secret key for authenticating with the brokers in your MSK cluster.
-          saslScram512: arn:aws:secretsmanager:region:XXXXXX:secret:AmazonMSK_xxxxxx
 ```
 
 ### ActiveMQ

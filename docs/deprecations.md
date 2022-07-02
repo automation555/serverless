@@ -36,6 +36,20 @@ Note:
 - The `serverless.yml` setting is ineffective for deprecations reported before the configuration is read.
 - `SLS_DEPRECATION_DISABLE` and `disabledDeprecations` remain respected, and no errors will be thrown for mentioned deprecation codes.
 
+<a name="PROVIDER_WEBSOCKETS_SETTINGS_v3"><div>&nbsp;</div></a>
+
+## Grouping websockets settings under `provider.websockets`
+
+Deprecation code: `PROVIDER_WEBSOCKETS_SETTINGS_v3`
+
+Websockets-related settings of _provider_ including `websocketsApiName`, `websocketsApiRouteSelectionExpression` and `websocketsDescription` are also now supported at `websockets` property. Refer to the [Websocket Guide](/docs/providers/aws/events/websocket.md).
+
+- `provider.websocketsApiName` -> `provider.websockets.apiName`
+- `provider.websocketsApiRouteSelectionExpression` -> `provider.websockets.apiRouteSelectionExpression`
+- `provider.websocketsDescription` -> `provider.websockets.description`
+
+Starting with v4.0.0 old versions of settings will no longer be supported
+
 <a name="VARIABLES_RESOLUTION_MODE"><div>&nbsp;</div></a>
 
 ## Property `variablesResolutionMode`
@@ -115,15 +129,6 @@ Check [Packaging Patterns](/framework/docs/providers/aws/guide/packaging/#patter
 Deprecation code: `CLI_DEPLOY_FUNCTION_OPTION_V3`
 
 Starting with `v4.0.0`, `--function` or `-f` option for `deploy` command will no longer be supported. In order to deploy a single function, please use `deploy function` command instead.
-
-<a name="AWS_WEBSOCKET_API_USE_PROVIDER_TAGS"><div>&nbsp;</div></a>
-
-## Property `provider.websocket.useProviderTags`
-
-Deprecation code: `AWS_WEBSOCKET_API_USE_PROVIDER_TAGS`
-
-Starting with v4.0.0, `provider.tags` will be applied to Websocket Api Gateway by default
-Set `provider.websocket.useProviderTags` to `true` to adapt to the new behavior now.
 
 <a name="LAMBDA_HASHING_VERSION_PROPERTY"><div>&nbsp;</div></a>
 
@@ -257,7 +262,7 @@ Deprecation code: `UNSUPPORTED_CLI_OPTIONS`
 
 CLI options validation was introduced to detect typos and mistakes. That required dropping support for _free-form_ CLI options in v3 (because free-form CLI options cannot be validated).
 
-An alternative to free-form CLI options is to use [environment variables](./providers/aws/guide/variables#referencing-environment-variables). Another option is to use [the `--param` option](./guides/parameters#cli-parameters) introduced in Serverless Framework **v3.3.0**:
+An alternative to free-form CLI options is to use [environment variables](./providers/aws/guide/variables#referencing-environment-variables). Another option is to use [the `--param` option](./parameters.md#cli-parameters) introduced in Serverless Framework **v3.3.0**:
 
 ```yaml
 provider:
