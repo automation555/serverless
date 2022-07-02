@@ -1677,11 +1677,6 @@ describe('lib/plugins/aws/package/compile/functions/index.test.js', () => {
                 },
               },
             },
-            fnUrlWithProvisioned: {
-              handler: 'target.handler',
-              url: true,
-              provisionedConcurrency: 1,
-            },
           },
           resources: {
             Resources: {
@@ -1905,42 +1900,6 @@ describe('lib/plugins/aws/package/compile/functions/index.test.js', () => {
       });
     });
 
-    it('should support `functions[].url` set to `true` with provisionedConcurrency set', () => {
-      expect(
-        cfResources[naming.getLambdaFunctionUrlLogicalId('fnUrlWithProvisioned')].Properties
-      ).to.deep.equal({
-        AuthType: 'NONE',
-        TargetFunctionArn: {
-          'Fn::Join': [
-            ':',
-            [
-              {
-                'Fn::GetAtt': ['FnUrlWithProvisionedLambdaFunction', 'Arn'],
-              },
-              'provisioned',
-            ],
-          ],
-        },
-      });
-      expect(
-        cfResources[naming.getLambdaFunctionUrlLogicalId('fnUrlWithProvisioned')].DependsOn
-      ).to.equal('FnUrlWithProvisionedProvConcLambdaAlias');
-
-      expect(
-        cfResources[naming.getLambdaFnUrlPermissionLogicalId('fnUrl')].Properties
-      ).to.deep.equal({
-        Action: 'lambda:InvokeFunctionUrl',
-        FunctionName: {
-          'Fn::GetAtt': ['FnUrlLambdaFunction', 'Arn'],
-        },
-        FunctionUrlAuthType: 'NONE',
-        Principal: '*',
-      });
-      expect(
-        cfResources[naming.getLambdaFnUrlPermissionLogicalId('fnUrlWithProvisioned')].DependsOn
-      ).to.equal('FnUrlWithProvisionedProvConcLambdaAlias');
-    });
-
     it('should support `functions[].url` set to an object with authorizer and cors', () => {
       expect(
         cfResources[naming.getLambdaFunctionUrlLogicalId('fnUrlWithAuthAndCors')].Properties
@@ -1958,7 +1917,6 @@ describe('lib/plugins/aws/package/compile/functions/index.test.js', () => {
             'Authorization',
             'X-Api-Key',
             'X-Amz-Security-Token',
-            'X-Amzn-Trace-Id',
           ],
           MaxAge: 3600,
           AllowCredentials: undefined,
@@ -2592,14 +2550,74 @@ describe('lib/plugins/aws/package/compile/functions/index.test.js', () => {
     });
   });
 
-  describe.skip('TODO: Download package artifact from S3 bucket', () => {
+  describe('TODO: Download package artifact from S3 bucket', () => {
+    const s3BucketName = 'testBucket';
+    const s3ArtifactName = 'artifact.zip';
+    const s3ArtifactName2 = 'artifact2.zip';
+
+    const callsMock = {
+      CloudFormation: {
+        describeStacks: { Stacks: [{ Outputs: [] }] },
+        describeStackResource: {
+          StackResourceDetail: { PhysicalResourceId: 'deployment-bucket' },
+        },
+        listStackResources: {},
+        updateStack: 'alreadyCreated',
+        validateTemplate: {},
+      },
+      Lambda: {
+        getFunction: {
+          Configuration: {
+            LastModified: '2020-05-20T15:34:16.494+0000',
+          },
+        },
+      },
+      S3: {
+        getObject: () => {
+          throw new Error('error test');
+        },
+        headObject: {
+          Metadata: { filesha256: 'RRYyTm4Ri8mocpvx44pvas4JKLYtdJS3Z8MOlrZrDXA=' },
+        },
+        listObjectsV2: {
+          Contents: [
+            {
+              Key: 'serverless/test-package-artifact/dev/1589988704359-2020-05-20T15:31:44.359Z/artifact.zip',
+              LastModified: new Date(),
+              ETag: '"5102a4cf710cae6497dba9e61b85d0a4"',
+              Size: 356,
+              StorageClass: 'STANDARD',
+            },
+          ],
+        },
+        upload: sinon.spy(),
+      },
+      STS: {
+        getCallerIdentity: {
+          ResponseMetadata: { RequestId: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
+          UserId: 'XXXXXXXXXXXXXXXXXXXXX',
+          Account: '999999999999',
+          Arn: 'arn:aws:iam::999999999999:user/test',
+        },
+      },
+    };
+
     before(async () => {
       await runServerless({
         fixture: 'package-artifact',
         command: 'deploy',
+        awsRequestStubMap: callsMock,
+        lastLifecycleHookName: 'aws:deploy:deploy:uploadArtifact',
         configExt: {
-          package: { artifact: 'some s3 url' },
-          functions: { basic: { package: { individually: true, artifact: 'other s3 url' } } },
+          package: { artifact: `https://s3.amazonaws.com/${s3BucketName}/${s3ArtifactName}` },
+          functions: {
+            basic: {
+              package: {
+                individually: true,
+                artifact: `https://s3.amazonaws.com/${s3BucketName}/${s3ArtifactName2}`,
+              },
+            },
+          },
         },
       });
     });
