@@ -36,7 +36,7 @@ describe('#addCustomResourceToService()', () => {
       region: 'us-east-1',
     };
     tmpDirPath = createTmpDir();
-    serverless = new Serverless({ commands: [], options: {} });
+    serverless = new Serverless();
     serverless.cli = new CLI();
     serverless.pluginManager.cliOptions = options;
     provider = new AwsProvider(serverless, options);
@@ -46,7 +46,7 @@ describe('#addCustomResourceToService()', () => {
       Resources: {},
     };
     serverless.serviceDir = tmpDirPath;
-    serverless.service.package.artifactDirectoryName = 'artifact-dir-name';
+    serverless.service.provider.s3DeploymentDirectoryPath = 'artifact-dir-name';
   });
 
   it('should add one IAM role and the custom resources to the service', () =>
@@ -109,7 +109,7 @@ describe('#addCustomResourceToService()', () => {
           Role: {
             'Fn::GetAtt': ['IamRoleCustomResourcesLambdaExecution', 'Arn'],
           },
-          Runtime: 'nodejs14.x',
+          Runtime: 'nodejs12.x',
           Timeout: 180,
         },
         DependsOn: ['IamRoleCustomResourcesLambdaExecution'],
@@ -128,7 +128,7 @@ describe('#addCustomResourceToService()', () => {
           Role: {
             'Fn::GetAtt': ['IamRoleCustomResourcesLambdaExecution', 'Arn'],
           },
-          Runtime: 'nodejs14.x',
+          Runtime: 'nodejs12.x',
           Timeout: 180,
         },
         DependsOn: ['IamRoleCustomResourcesLambdaExecution'],
@@ -147,7 +147,7 @@ describe('#addCustomResourceToService()', () => {
           Role: {
             'Fn::GetAtt': ['IamRoleCustomResourcesLambdaExecution', 'Arn'],
           },
-          Runtime: 'nodejs14.x',
+          Runtime: 'nodejs12.x',
           Timeout: 180,
         },
         DependsOn: ['IamRoleCustomResourcesLambdaExecution'],

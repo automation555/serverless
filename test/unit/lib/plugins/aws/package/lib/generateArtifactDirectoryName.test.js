@@ -10,7 +10,7 @@ describe('#generateArtifactDirectoryName()', () => {
   let awsPackage;
 
   beforeEach(() => {
-    serverless = new Serverless({ commands: [], options: {} });
+    serverless = new Serverless();
     const options = {
       stage: 'dev',
       region: 'us-east-1',
@@ -18,6 +18,7 @@ describe('#generateArtifactDirectoryName()', () => {
     serverless.setProvider('aws', new AwsProvider(serverless, options));
     awsPackage = new AwsPackage(serverless, options);
     awsPackage.serverless.cli = new serverless.classes.CLI();
+    serverless.service.provider.s3DeploymentDirectoryPath = 'some/dir/2021-09-01T19:00:13';
   });
 
   it('should generate a name for the artifact directory based on the current time', () => {

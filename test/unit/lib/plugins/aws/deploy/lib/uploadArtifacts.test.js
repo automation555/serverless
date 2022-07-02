@@ -25,7 +25,7 @@ describe('uploadArtifacts', () => {
   let cryptoStub;
 
   beforeEach(() => {
-    serverless = new Serverless({ commands: [], options: {} });
+    serverless = new Serverless();
     serverless.serviceDir = 'foo';
     serverless.setProvider('aws', new AwsProvider(serverless, {}));
     const options = {
@@ -34,7 +34,7 @@ describe('uploadArtifacts', () => {
     };
     awsDeploy = new AwsDeploy(serverless, options);
     awsDeploy.bucketName = 'deployment-bucket';
-    awsDeploy.serverless.service.package.artifactDirectoryName = 'somedir';
+    awsDeploy.serverless.service.provider.s3DeploymentDirectoryPath = 'somedir';
     awsDeploy.serverless.service.functions = {
       first: {
         handler: 'foo',
@@ -86,7 +86,7 @@ describe('uploadArtifacts', () => {
         expect(uploadStub).to.have.been.calledOnce;
         expect(uploadStub).to.have.been.calledWithExactly('S3', 'upload', {
           Bucket: awsDeploy.bucketName,
-          Key: `${awsDeploy.serverless.service.package.artifactDirectoryName}/compiled-cloudformation-template.json`,
+          Key: `${awsDeploy.serverless.service.provider.s3DeploymentDirectoryPath}/compiled-cloudformation-template.json`,
           Body: JSON.stringify({ foo: 'bar' }),
           ContentType: 'application/json',
           Metadata: {
@@ -108,7 +108,7 @@ describe('uploadArtifacts', () => {
         expect(uploadStub).to.have.been.calledOnce;
         expect(uploadStub).to.have.been.calledWithExactly('S3', 'upload', {
           Bucket: awsDeploy.bucketName,
-          Key: `${awsDeploy.serverless.service.package.artifactDirectoryName}/compiled-cloudformation-template.json`,
+          Key: `${awsDeploy.serverless.service.provider.s3DeploymentDirectoryPath}/compiled-cloudformation-template.json`,
           Body: JSON.stringify({ foo: 'bar' }),
           ContentType: 'application/json',
           ServerSideEncryption: 'AES256',
@@ -150,7 +150,7 @@ describe('uploadArtifacts', () => {
         expect(uploadStub).to.have.been.calledOnce;
         expect(uploadStub).to.have.been.calledWithExactly('S3', 'upload', {
           Bucket: awsDeploy.bucketName,
-          Key: `${awsDeploy.serverless.service.package.artifactDirectoryName}/artifact.zip`,
+          Key: `${awsDeploy.serverless.service.provider.s3DeploymentDirectoryPath}/artifact.zip`,
           Body: sinon.match.object.and(sinon.match.has('path', artifactFilePath)),
           ContentType: 'application/zip',
           Metadata: {
@@ -176,7 +176,7 @@ describe('uploadArtifacts', () => {
         expect(readFileSyncStub).to.have.been.calledOnce;
         expect(uploadStub).to.have.been.calledWithExactly('S3', 'upload', {
           Bucket: awsDeploy.bucketName,
-          Key: `${awsDeploy.serverless.service.package.artifactDirectoryName}/artifact.zip`,
+          Key: `${awsDeploy.serverless.service.provider.s3DeploymentDirectoryPath}/artifact.zip`,
           Body: sinon.match.object.and(sinon.match.has('path', artifactFilePath)),
           ContentType: 'application/zip',
           ServerSideEncryption: 'AES256',
@@ -323,7 +323,7 @@ describe('uploadArtifacts', () => {
         expect(uploadStub).to.have.been.calledOnce;
         expect(uploadStub).to.have.been.calledWithExactly('S3', 'upload', {
           Bucket: awsDeploy.bucketName,
-          Key: `${awsDeploy.serverless.service.package.artifactDirectoryName}/custom-resources.zip`,
+          Key: `${awsDeploy.serverless.service.provider.s3DeploymentDirectoryPath}/custom-resources.zip`,
           Body: sinon.match.object.and(sinon.match.has('path', customResourcesFilePath)),
           ContentType: 'application/zip',
           Metadata: {
