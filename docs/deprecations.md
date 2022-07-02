@@ -6,11 +6,9 @@ layout: Doc
 
 # Serverless Framework Deprecations
 
-## How to disable a specific deprecation
+## How to disable specific deprecation logs
 
-To disable a deprecation, use the `SLS_DEPRECATION_DISABLE=CODE` environment variable. You can disable multiple deprecations via `SLS_DEPRECATION_DISABLE=CODE1,CODE2` or disable them all via `SLS_DEPRECATION_DISABLE=*`.
-
-Alternatively, you can set `disabledDeprecations` in `serverless.yml`:
+To disable specific deprecations set `SLS_DEPRECATION_DISABLE` environment variable. Setting `SLS_DEPRECATION_DISABLE=*` will disable all deprecations. If you want to disable specific deprecations set `SLS_DEPRECATION_DISABLE=CODE1,CODE2`. Alternatively, you can also use `disabledDeprecations` in your `serverless.yml` in the following manner:
 
 ```yml
 service: myService
@@ -19,138 +17,24 @@ disabledDeprecations:
   - '*' # To disable all deprecation messages
 ```
 
-## Notification mode
+## Notifications mode
 
-By default, deprecations are logged after the command finalizes with a warning summary.
+By default deprecations are logged, after command finalizes with a warning summary (`warn:summary` mode)
 
-This notification mode can be changed via the `SLS_DEPRECATION_NOTIFICATION_MODE=error` environment variable or via `serverless.yml`:
+Alternatively deprecation warnings can be displayed as they're discovered, on the go, that can be turned on with `warn` mode (this mode is automatically pursued on in case we fallback to locally installed Serverless Framework installation)
+
+If there's an intention to work with _deprecation_ free service, reporting mode can be switched to `error`, so approached deprecation is reported with a thrown error.
+
+Mode can be set via environment variable: `SLS_DEPRECATION_NOTIFICATION_MODE=error` or via top level service configuration setting:
 
 ```yaml
 deprecationNotificationMode: error
 ```
 
-The `error` mode turns all deprecations into strict errors, the `warn` mode displays deprecations as they're discovered.
-
 Note:
 
-- The `serverless.yml` setting is ineffective for deprecations reported before the configuration is read.
-- `SLS_DEPRECATION_DISABLE` and `disabledDeprecations` remain respected, and no errors will be thrown for mentioned deprecation codes.
-
-<a name="PROJECT_DIR"><div>&nbsp;</div></a>
-
-## Property `projectDir`
-
-Deprecation code: `PROJECT_DIR`
-
-Starting with v4.0.0, Serverless will no longer recognize `projectDir`, as supported configuration property. Drop it to avoid validation errors
-
-Learn more about configuration validation here: http://slss.io/configuration-validation
-
-<a name="CLI_OPTIONS_SCHEMA_V3"><div>&nbsp;</div></a>
-
-## CLI Options extensions, `type` requirement
-
-Deprecation code: `CLI_OPTIONS_SCHEMA_V3`
-
-Internal handling of CLI arguments was improved with type awareness for options. Now each option definition is expected have `type` defined in its settings.
-
-Possible values are `string`, `boolean` and `multiple`. Check [Defining options](/framework/docs/providers/aws/guide/plugins#defining-options) documentation for more info.
-
-If you rely on a plugin which does not set types (yet) please report the issue at its issue tracker.
-
-Starting with v4.0.0 any option extensions which does not have `type` defined will be communicated with a thrown error
-
-<a name="PROVIDER_IAM_SETTINGS_V3"><div>&nbsp;</div></a>
-
-## Grouping IAM settings under `provider.iam`
-
-Deprecation code: `PROVIDER_IAM_SETTINGS_v3`
-
-All IAM-related settings of _provider_ including `iamRoleStatements`, `iamManagedPolicies`, `role` and `cfnRole` are also now supported at `iam` property. Refer to the [IAM Guide](/framework/docs/providers/aws/guide/iam.md).
-
-- `provider.role` -> `provider.iam.role`
-- `provider.rolePermissionsBoundary` -> `provider.iam.role.permissionsBoundary`
-- `provider.iamRoleStatements` -> `provider.iam.role.statements`
-- `provider.iamManagedPolicies` -> `provider.iam.role.managedPolicies`
-- `provider.cfnRole` -> `provider.iam.deploymentRole`
-
-In addition `iam.role.permissionBoundary` can also be set at `iam.role.permissionsBoundary` (which matches CloudFormation property name).
-
-Starting with v4.0.0 old versions of settings will no longer be supported
-
-<a name="CONFIG_VALIDATION_MODE_DEFAULT_V3"><div>&nbsp;</div></a>
-
-## `configValidationMode: error` will be new default
-
-Deprecation code: `CONFIG_VALIDATION_MODE_DEFAULT_V3`
-
-Starting with v4.0.0, Serverless will throw on configuration errors by default. This is changing from the previous default, `configValidationMode: warn`
-
-Learn more about configuration validation here: http://slss.io/configuration-validation
-
-<a name="PACKAGE_PATTERNS"><div>&nbsp;</div></a>
-
-## New way to define packaging patterns
-
-Deprecation code: `PACKAGE_PATTERNS`
-
-Support for `package.include` and `package.exclude` will be removed with v4.0.0. Instead please use `package.patterns` with which both _include_ and _exclude_ (prefixed with `!`) rules can be configured.
-
-Check [Packaging Patterns](/framework/docs/providers/aws/guide/packaging/#patterns) documentation for more info.
-
-<a name="CLI_DEPLOY_FUNCTION_OPTION_V3"><div>&nbsp;</div></a>
-
-## CLI `--function`/`-f` option for `deploy` command
-
-Deprecation code: `CLI_DEPLOY_FUNCTION_OPTION_V3`
-
-Starting with `v4.0.0`, `--function` or `-f` option for `deploy` command will no longer be supported. In order to deploy a single function, please use `deploy function` command instead.
-
-<a name="LAMBDA_HASHING_VERSION_PROPERTY"><div>&nbsp;</div></a>
-
-## Property `provider.lambdaHashingVersion`
-
-Deprecation code: `LAMBDA_HASHING_VERSION_PROPERTY`
-
-Lambda version hashes were improved with a better algorithm (that fixed determinism issues), which is used by default, starting with v3.0.0.
-
-If you previously opted-in to use new algorithm by setting `provider.lambdaHashingVersion` to `20201221`, you can safely remove that property from your configuration to silence the deprecation.
-
-The old `20200924` algorithm is deprecated and it is recommended to migrate to the new version. In order to do that, you can follow the guide in [Functions Docs](./providers/aws/guide/functions.md#lambda-hashing-algorithm-migration).
-
-<a name="AwS_EVENT_BRIDGE_CUSTOM_RESOURCE_LEGACY_OPT_IN"><div>&nbsp;</div></a>
-
-## AWS EventBridge lambda event triggers based on Custom Resources
-
-Deprecation code: `AWS_EVENT_BRIDGE_CUSTOM_RESOURCE_LEGACY_OPT_IN`
-
-Support for provisioning AWS EventBridge resources without native CloudFormation resources is deprecated and will no longer be maintained. If you want to upgrade to native CloudFormation, remove "eventBridge.useCloudFormation" setting from your configuration. If you are currently using "eventBridge.useCloudFormation" set to `true` to enable native CloudFormation, you can safely remove this setting from your configuration.
-
-Note that to migrate away from the legacy behavior, you will need to remove (or comment) EventBridge triggers, deploy, re-add them and re-deploy in order to migrate from the legacy behavior.
-
-<a name="AWS_HTTP_API_USE_PROVIDER_TAGS_PROPERTY"><div>&nbsp;</div></a>
-
-## Ineffective property `provider.httpApi.useProviderTags`
-
-Deprecation code: `AWS_HTTP_API_USE_PROVIDER_TAGS_PROPERTY`
-
-Starting with "v3.0.0", property `provider.httpApi.useProviderTags` is no longer effective as provider tags are applied to Http Api Gateway by default. You can safely remove this property from your configuration.
-
-<a name="S3_TRANSFER_ACCELERATION_ON_EXISTING_BUCKET"><div>&nbsp;</div></a>
-
-## Attempt to enable S3 Transfer Acceleration on provided S3 buckets
-
-Deprecation code: `S3_TRANSFER_ACCELERATION_ON_EXISTING_BUCKET`
-
-Starting with "v3.0.0", attempt to enable S3 Transfer Acceleration on user provided bucket will result in error instead of a warning. To ensure seamless upgrade, please stop using "--aws-s3-accelerate" flag.
-
-<a name="DUPLICATE_PLUGIN_DEFINITION"><div>&nbsp;</div></a>
-
-## Duplicate plugin definition in configuration
-
-Deprecation code: `DUPLICATE_PLUGIN_DEFINITION`
-
-Starting with "v3.0.0", duplicate plugin definition will result in an error instead of a warning. To ensure seamless upgrade, please remove duplicate plugins from your configuration.
+- In service configuration setting is ineffective for deprecations reported before service configuration is read.
+- `SLS_DEPRECATION_DISABLE` env var and `disabledDeprecations` configuration setting remain respected, and no errors will be thrown for mentioned deprecation coodes.
 
 <a name="CLI_VERBOSE_OPTION_ALIAS"><div>&nbsp;</div></a>
 
@@ -180,9 +64,7 @@ Starting with `v3.0.0`, it will not be possible to disable default export names 
 
 ## CLI `--function`/`-f` option for `deploy` command
 
-Deprecation code: `CLI_DEPLOY_FUNCTION_OPTION`
-
-_Note: We've resigned from this deprecation in the context of v2 (it'll be re-added in the context of v3). We continue to advise using `deploy function -f` command instead of `deploy -f`._
+Deprecation code: `CLI_DEPLOY_FUNCTION_OPTION'`
 
 Starting with `v3.0.0`, `--function` or `-f` option for `deploy` command will be removed. In order to deploy a single function, please use `deploy function` command instead.
 
@@ -200,15 +82,13 @@ Starting with `v3.0.0`, the default runtime will change from `nodejs12.x` to `no
 
 Deprecation code: `AWS_API_GATEWAY_NON_APPLICABLE_SETTINGS`
 
-When external API Gateway resource is used and imported via `provider.apiGateway.restApiId` setting, both `provider.logs.restApi` and `provider.tracing.apiGateway` are ignored. In v3, an error will be thrown if these options are defined. Indeed, these settings are applicable only if API Gateway resource is provisioned by Serverless Framework.
+When external API Gateway resource is used and imported via `provider.apiGateway.restApiId` setting, both `provider.logs.restApi` and `provider.tracing.apiGateway` will be ignored. These settings are applicable only if API Gateway resource is provisioned by Serverless Framework.
 
-<a name="CLI_OPTIONS_SCHEMA"><div>&nbsp;</div></a>
+<a name="CLI_OPTIONS_SCHEMA'"><div>&nbsp;</div></a>
 
 ## CLI Options extensions, `type` requirement
 
-Deprecation code: `CLI_OPTIONS_SCHEMA`
-
-_Note: We've resigned from this deprecation in the context of v2 (it'll be re-added in the context of v3). We continue to advise upgrade so schema for CLI options is provided._
+Deprecation code: `CLI_OPTIONS_SCHEMA'`
 
 Internal handling of CLI arguments was improved with type awareness for options. Now each option definition is expected have `type` defined in its settings.
 
@@ -223,8 +103,6 @@ Starting with v3.0.0 any option extensions which does not have `type` defined wi
 ## New way to define packaging patterns
 
 Deprecation code: `NEW_PACKAGE_PATTERNS`
-
-_Note: We've resigned from this deprecation in the context of v2 (it'll be re-added in the context of v3). We continue to advise upgrade of services, so they do not rely on `package.include` and `package.exclude` settings._
 
 Support for `package.include` and `package.exclude` will be removed with v3.0.0. Instead please use `package.patterns` with which both _include_ and _exclude_ (prefixed with `!`) rules can be configured.
 
@@ -270,8 +148,6 @@ Ensure to always format CLI command as `sls [command..] [options...]`
 
 Deprecation code: `CONFIG_VALIDATION_MODE_DEFAULT`
 
-_Note: We've resigned from this deprecation in the context of v2 (it'll be re-added in the context of v3). We continue to advise configuring services with `configValidationMode: error` setting._
-
 Starting with v3.0.0, Serverless will throw on configuration errors by default. This is changing from the previous default, `configValidationMode: warn`
 
 Learn more about configuration validation here: http://slss.io/configuration-validation
@@ -290,11 +166,9 @@ Starting with v3.0.0, `http.request.schema` property will be replaced by `http.r
 
 Deprecation code: `AWS_EVENT_BRIDGE_CUSTOM_RESOURCE`
 
-Starting with v3.0.0, AWS EventBridge lambda event triggers and all associated EventBridge resources will be, by default, deployed using native CloudFormation resources instead of a custom resource that used a lambda to deploy them via the AWS SDK/API.
+Starting with v3.0.0 AWS EventBridge lambda event triggers and all associated EventBridge resources will be deployed using native CloudFormation resources instead of a custom resource that used a lambda to deploy them via the AWS SDK/API.
 
 Adapt to this behavior now by setting `provider.eventBridge.useCloudFormation: true`.
-
-If you want to keep using the old deployment method for your AWS EventBridge resources, set `provider.eventBridge.useCloudFormation: false` instead.
 
 <a name="NEW_VARIABLES_RESOLVER"><div>&nbsp;</div></a>
 
@@ -314,7 +188,7 @@ It's recommended to expose all errors that eventually new resolver may report (t
 
 Deprecation code: `AWS_HTTP_API_USE_PROVIDER_TAGS`
 
-Starting with v3.0.0, `provider.tags` will be applied to HTTP API Gateway stages by default
+Starting with v3.0.0, `provider.tags` will be applied to Http Api Gateway by default
 Set `provider.httpApi.useProviderTags` to `true` to adapt to the new behavior now.
 
 <a name="MISSING_COMMANDS_OR_OPTIONS_AT_CONSTRUCTION"><div>&nbsp;</div></a>
@@ -424,11 +298,9 @@ Org, app, service, stage, and region are required to resolve variables when logg
 
 Deprecation code: `LAMBDA_HASHING_VERSION_V2`
 
-Lambda version hashes were improved with a better algorithm (that fixed determinism issues). It will be used by default starting with v3.0.0.
+Resolution of lambda version hashes was improved with better (fixed deterministism issues) algorithm, which will be used starting with v3.0.0
 
-You can adapt your services to use it now by setting `provider.lambdaHashingVersion` to `20201221`.
-
-While not recommended, you can keep using the old hashing algorithm by setting `provider.lambdaHashingVersion` to `20200924`. That will silence the deprecation and allow to upgrade to v3.
+You can adapt your services to use it now, by setting `provider.lambdaHashingVersion` to `20201221`.
 
 **Notice:** If you apply this on already deployed service without any changes to lambda code, you might encounter an error similar to the one below:
 
@@ -438,7 +310,7 @@ While not recommended, you can keep using the old hashing algorithm by setting `
   An error occurred: FooLambdaVersion3IV5NZ3sE5T2UFimCOai2Tc6eCaW7yIYOP786U0Oc - A version for this Lambda function exists ( 11 ). Modify the function to create a new version..
 ```
 
-It is an expected behavior. AWS complains here that received a different hash for very same lambda configuration. To workaround that, you need to modify your function(s) code and try to redeploy it again. One common approach is to modify an utility function that is used by all/most of your Lambda functions. There's also a semi-automated migration available and described in [V3 Upgrade docs](./guides/upgrading-v3.md#lambda-hashing-algorithm).
+It is an expected behavior. AWS complains here that received a different hash for very same lambda configuration. To workaround that, you need to modify your function(s) code and try to redeploy it again. One common approach is to modify an utility function that is used by all/most of your Lambda functions.
 
 <a name="LOAD_VARIABLES_FROM_ENV_FILES"><div>&nbsp;</div></a>
 
@@ -482,6 +354,18 @@ Adapt to this convention now by setting `provider.apiGateway.shouldStartNameWith
 
 Eventually if you have a strong reason to stick to current convention, you may ensure it's kept after upgrading by setting: `provider.apiName: ${sls:stage}`
 
+<a name="KINESIS_CONSUMER_NAME_CONTAINING_SERVICE"><div>&nbsp;</div></a>
+
+## Kinesis consumer name will be changed to ensure more uniqueness
+
+Deprecation code: `KINESIS_CONSUMER_NAME_CONTAINING_SERVICE`
+
+Starting with v3.0.0, Kinesis consumer name will be changed. This will lead to downtime during re-deployment. Specifically, the naming pattern will be changed from `${functionName}${streamName}Consumer` to `${functionName}${streamName}${serviceName}${stage}Consumer`.
+
+Adapt to this convention now by setting `provider.kinesis.consumerNamingMode` to `serviceSpecific` in your serverless.yml file.
+
+The consequence for consumer name change is there will be some downtime during deployment between the time the old consumer is deleted and the new consumer is created. While no data is supposed to be lost, there may be a delay in consuming stream data.
+
 <a name="ALEXA_SKILL_EVENT_WITHOUT_APP_ID"><div>&nbsp;</div></a>
 
 ## Support for `alexaSkill` event without `appId` is to be removed
@@ -503,8 +387,6 @@ Please use `provider.kmsKeyArn` and `functions[].kmsKeyArn`. `service.awsKmsKeyA
 ## Defining extensions to nonexistent resources in `resources.extensions`
 
 Deprecation code: `RESOURCES_EXTENSIONS_REFERENCE_TO_NONEXISTENT_RESOURCE`
-
-_Note: This deprecation was replaced with a thrown error (adding a deprecation here, was a logical error). Please upgrade to latest version of the Framework_
 
 Starting with v3.0.0, extensions to nonexistent resources in `resources.extensions` will throw an error instead of passing silently.
 
