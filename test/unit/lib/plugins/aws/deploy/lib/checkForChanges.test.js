@@ -33,7 +33,7 @@ describe('checkForChanges', () => {
       stage: 'dev',
       region: 'us-east-1',
     };
-    serverless = new Serverless({ commands: [], options: {} });
+    serverless = new Serverless();
     serverless.serviceDir = 'my-service';
     provider = new AwsProvider(serverless, options);
     serverless.setProvider('aws', provider);
@@ -1033,7 +1033,7 @@ describe('test/unit/lib/plugins/aws/deploy/lib/checkForChanges.test.js', () => {
                 Key: 'serverless/test-package-artifact/dev/1589988704359-2020-05-20T15:31:44.359Z/compiled-cloudformation-template.json',
               })
               .returns({
-                Metadata: { filesha256: 'pZOdrt6qijT7ITsLQjPP9QwgMAfKA2RuUUSTW+l8wWs=' },
+                Metadata: { filesha256: '1lX4znKl+E2XIDCKbnfYHdfh8lTbVHV6Oab07Hgvzw0=' },
               });
 
             headObjectStub
@@ -1069,6 +1069,31 @@ describe('test/unit/lib/plugins/aws/deploy/lib/checkForChanges.test.js', () => {
       },
     });
     expect(serverless.service.provider.shouldNotDeploy).to.equal(true);
+  });
+
+  it('should print a warning if missing lambda:GetFunction permission', async () => {
+    const { stdoutData } = await runServerless({
+      fixture: 'checkForChanges',
+      command: 'deploy',
+      lastLifecycleHookName: 'aws:deploy:deploy:checkForChanges',
+      awsRequestStubMap: {
+        ...commonAwsSdkMock,
+        Lambda: {
+          getFunction: sandbox.stub().throws({ providerError: { statusCode: 403 } }),
+        },
+        S3: {
+          listObjectsV2: {},
+          headObjects: {},
+          headBucket: {},
+        },
+      },
+    });
+    expect(stdoutData).to.include(
+      [
+        'WARNING: Not authorized to perform: lambda:GetFunction for at least one of the lambda functions.',
+        ' Deployment will not be skipped even if service files did not change.',
+      ].join('')
+    );
   });
 
   it.skip('TODO: should crash meaningfully if bucket does not exist', () => {
