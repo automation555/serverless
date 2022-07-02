@@ -28,13 +28,17 @@ describe('validateTemplate', () => {
     serverless.setProvider('aws', new AwsProvider(serverless, options));
     awsDeploy = new AwsDeploy(serverless, options);
     awsDeploy.bucketName = 'deployment-bucket';
-    awsDeploy.serverless.service.provider.s3DeploymentDirectoryPath = 'somedir';
+    awsDeploy.serverless.service.package.deploymentDirectoryPrefix = 'somedir';
+    awsDeploy.serverless.service.package.timestamp = 'time-stamp';
     awsDeploy.serverless.service.functions = {
       first: {
         handler: 'foo',
       },
     };
     validateTemplateStub = sinon.stub(awsDeploy.provider, 'request');
+    awsDeploy.serverless.cli = {
+      log: sinon.spy(),
+    };
   });
 
   afterEach(() => {
@@ -46,13 +50,14 @@ describe('validateTemplate', () => {
       validateTemplateStub.resolves();
 
       await awsDeploy.validateTemplate();
+      expect(awsDeploy.serverless.cli.log).to.have.been.called;
       expect(validateTemplateStub).to.have.been.calledOnce;
       expect(validateTemplateStub).to.have.been.calledWithExactly(
         'CloudFormation',
         'validateTemplate',
         {
           TemplateURL:
-            'https://s3.amazonaws.com/deployment-bucket/somedir/compiled-cloudformation-template.json',
+            'https://s3.amazonaws.com/deployment-bucket/somedir/time-stamp/compiled-cloudformation-template.json',
         }
       );
     });
@@ -61,13 +66,14 @@ describe('validateTemplate', () => {
       validateTemplateStub.rejects({ message: 'Some error while validating' });
 
       return expect(awsDeploy.validateTemplate()).to.be.rejected.then((error) => {
+        expect(awsDeploy.serverless.cli.log).to.have.been.called;
         expect(validateTemplateStub).to.have.been.calledOnce;
         expect(validateTemplateStub).to.have.been.calledWithExactly(
           'CloudFormation',
           'validateTemplate',
           {
             TemplateURL:
-              'https://s3.amazonaws.com/deployment-bucket/somedir/compiled-cloudformation-template.json',
+              'https://s3.amazonaws.com/deployment-bucket/somedir/time-stamp/compiled-cloudformation-template.json',
           }
         );
         expect(error.message).to.match(/is invalid: Some error while validating/);

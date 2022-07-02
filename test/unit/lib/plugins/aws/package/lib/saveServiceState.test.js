@@ -15,7 +15,7 @@ describe('#saveServiceState()', () => {
 
   beforeEach(() => {
     const options = {};
-    serverless = new Serverless({ commands: [], options: {} });
+    serverless = new Serverless();
     serverless.setProvider('aws', new AwsProvider(serverless, options));
     awsPackage = new AwsPackage(serverless, options);
     serverless.serviceDir = 'my-service';
@@ -25,8 +25,12 @@ describe('#saveServiceState()', () => {
       },
       package: {
         individually: false,
-        artifactDirectoryName: 'artifact-directory',
+        deploymentDirectoryPrefix: 'artifact-directory',
+        timestamp: 'time-stamp',
         artifact: 'service.zip',
+        artifactsMap: {
+          '.serverless/foobar.zip': 'somedir/code-artifacts/cafebabe.zip',
+        },
       },
     };
     getServiceStateFileNameStub = sinon
@@ -56,8 +60,12 @@ describe('#saveServiceState()', () => {
       },
       package: {
         individually: false,
-        artifactDirectoryName: 'artifact-directory',
+        deploymentDirectoryPrefix: 'artifact-directory',
+        timestamp: 'time-stamp',
         artifact: 'service.zip',
+        artifactsMap: {
+          '.serverless/foobar.zip': 'somedir/code-artifacts/cafebabe.zip',
+        },
       },
     };
 
@@ -90,8 +98,12 @@ describe('#saveServiceState()', () => {
       },
       package: {
         individually: false,
-        artifactDirectoryName: 'artifact-directory',
+        deploymentDirectoryPrefix: 'artifact-directory',
+        timestamp: 'time-stamp',
         artifact: 'service.zip',
+        artifactsMap: {
+          '.serverless/foobar.zip': 'somedir/code-artifacts/cafebabe.zip',
+        },
       },
     };
 

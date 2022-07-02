@@ -29,11 +29,10 @@ describe('extendedValidate', () => {
   };
   const stateFileMock = {
     service: serverlessYml,
-    provider: {
-      s3DeploymentDirectoryPath: 'some/path',
-    },
     package: {
       individually: true,
+      deploymentDirectoryPrefix: 'some/path',
+      timestamp: 'time-stamp',
       artifact: '',
     },
   };
@@ -165,6 +164,32 @@ describe('extendedValidate', () => {
       awsDeploy.extendedValidate();
       delete awsDeploy.serverless.service.package.artifact;
     });
+
+    it("should warn if function's timeout is greater than 30 and it's attached to APIGW", () => {
+      stateFileMock.service.functions = {
+        first: {
+          timeout: 31,
+          package: {
+            artifact: 'artifact.zip',
+          },
+          events: [
+            {
+              http: {},
+            },
+          ],
+        },
+      };
+      awsDeploy.serverless.service.package.individually = true;
+      fileExistsSyncStub.returns(true);
+      readFileSyncStub.returns(stateFileMock);
+
+      awsDeploy.extendedValidate();
+      const msg = [
+        "WARNING: Function first has timeout of 31 seconds, however, it's ",
+        "attached to API Gateway so it's automatically limited to 30 seconds.",
+      ].join('');
+      expect(awsDeploy.serverless.cli.log.firstCall.calledWithExactly(msg)).to.be.equal(true);
+    });
   });
 });
 
@@ -179,7 +204,7 @@ describe('test/unit/lib/plugins/aws/deploy/lib/extendedValidate.test.js', () => 
       fixture: 'function',
       configExt: {
         functions: {
-          basic: {
+          foo: {
             timeout: 31,
             events: [
               {

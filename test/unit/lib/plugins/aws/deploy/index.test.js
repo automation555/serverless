@@ -244,6 +244,7 @@ describe('test/unit/lib/plugins/aws/deploy/index.test.js', () => {
     const s3UploadStub = sinon.stub().resolves();
     const updateStackStub = sinon.stub().resolves({});
     const deleteObjectsStub = sinon.stub().resolves({});
+    const headObjectStub = sinon.stub().rejects({ code: 'AWS_S3_HEAD_OBJECT_NOT_FOUND' });
     const awsRequestStubMap = {
       ...baseAwsRequestStubMap,
       ECR: {
@@ -254,8 +255,8 @@ describe('test/unit/lib/plugins/aws/deploy/index.test.js', () => {
       S3: {
         deleteObjects: deleteObjectsStub,
         listObjectsV2: { Contents: [] },
+        headObject: headObjectStub,
         upload: s3UploadStub,
-        headBucket: {},
       },
       CloudFormation: {
         describeStacks: describeStacksStub,
@@ -323,6 +324,20 @@ describe('test/unit/lib/plugins/aws/deploy/index.test.js', () => {
         ],
       });
     const deleteObjectsStub = sinon.stub().resolves();
+    const headObjectStub = sinon.stub().rejects({ code: 'AWS_S3_HEAD_OBJECT_NOT_FOUND' });
+    const getObjectStub = sinon.stub().resolves({
+      Body: JSON.stringify({
+        Resources: {
+          ArtifactFunction: {
+            Properties: {
+              Code: {
+                S3Key: `${s3BucketPrefix}/1589988704351-2020-05-20T15:31:44.359Z/artifact.zip`,
+              },
+            },
+          },
+        },
+      }),
+    });
     const awsRequestStubMap = {
       ...baseAwsRequestStubMap,
       ECR: {
@@ -333,8 +348,9 @@ describe('test/unit/lib/plugins/aws/deploy/index.test.js', () => {
       S3: {
         deleteObjects: deleteObjectsStub,
         listObjectsV2: listObjectsV2Stub,
+        headObject: headObjectStub,
         upload: s3UploadStub,
-        headBucket: {},
+        getObject: getObjectStub,
       },
       CloudFormation: {
         describeStacks: { Stacks: [{}] },
@@ -424,7 +440,7 @@ describe('test/unit/lib/plugins/aws/deploy/index.test.js', () => {
         Key: 'serverless/test-package-artifact/dev/1589988704359-2020-05-20T15:31:44.359Z/compiled-cloudformation-template.json',
       })
       .returns({
-        Metadata: { filesha256: 'EpBwJbYct8iN0jajCnu9YUVrjH9230SqiUMYxqnSanQ=' },
+        Metadata: { filesha256: 'qxp+iwSTMhcRUfHzka4AE4XAWawS8GnEyBh1WpGb7Vw=' },
       });
     s3HeadObjectStub
       .withArgs({
@@ -441,7 +457,6 @@ describe('test/unit/lib/plugins/aws/deploy/index.test.js', () => {
         headObject: s3HeadObjectStub,
         listObjectsV2: listObjectsV2Stub,
         upload: s3UploadStub,
-        headBucket: {},
       },
       CloudFormation: {
         describeStacks: { Stacks: [{}] },
@@ -481,191 +496,5 @@ describe('test/unit/lib/plugins/aws/deploy/index.test.js', () => {
     expect(createStackStub).to.not.be.called;
     expect(updateStackStub).to.not.be.called;
     expect(s3UploadStub).to.not.be.called;
-  });
-
-  it('with existing stack - missing custom deployment bucket', async () => {
-    const awsRequestStubMap = {
-      ...baseAwsRequestStubMap,
-      ECR: {
-        describeRepositories: sinon.stub().throws({
-          providerError: { code: 'RepositoryNotFoundException' },
-        }),
-      },
-      S3: {
-        getBucketLocation: () => {
-          throw new Error();
-        },
-      },
-      CloudFormation: {
-        describeStacks: { Stacks: [{}] },
-        validateTemplate: {},
-      },
-    };
-
-    await expect(
-      runServerless({
-        fixture: 'function',
-        command: 'deploy',
-        awsRequestStubMap,
-        lastLifecycleHookName: 'aws:deploy:deploy:checkForChanges',
-        configExt: {
-          provider: {
-            deploymentBucket: 'bucket-name',
-          },
-        },
-      })
-    ).to.eventually.have.been.rejected.and.have.property('code', 'DEPLOYMENT_BUCKET_NOT_FOUND');
-  });
-
-  it('with existing stack - with custom deployment bucket in different region', async () => {
-    const awsRequestStubMap = {
-      ...baseAwsRequestStubMap,
-      ECR: {
-        describeRepositories: sinon.stub().throws({
-          providerError: { code: 'RepositoryNotFoundException' },
-        }),
-      },
-      S3: {
-        getBucketLocation: () => {
-          return {
-            LocationConstraint: 'us-west-1',
-          };
-        },
-      },
-      CloudFormation: {
-        describeStacks: { Stacks: [{}] },
-        validateTemplate: {},
-      },
-    };
-
-    await expect(
-      runServerless({
-        fixture: 'function',
-        command: 'deploy',
-        awsRequestStubMap,
-        lastLifecycleHookName: 'aws:deploy:deploy:checkForChanges',
-        configExt: {
-          provider: {
-            deploymentBucket: 'bucket-name',
-          },
-        },
-      })
-    ).to.eventually.have.been.rejected.and.have.property(
-      'code',
-      'DEPLOYMENT_BUCKET_INVALID_REGION'
-    );
-  });
-
-  it('with existing stack - with deployment bucket from CloudFormation deleted manually', async () => {
-    const awsRequestStubMap = {
-      ...baseAwsRequestStubMap,
-      ECR: {
-        describeRepositories: sinon.stub().throws({
-          providerError: { code: 'RepositoryNotFoundException' },
-        }),
-      },
-      S3: {
-        headBucket: () => {
-          const err = new Error();
-          err.code = 'AWS_S3_HEAD_BUCKET_NOT_FOUND';
-          throw err;
-        },
-      },
-      CloudFormation: {
-        describeStacks: { Stacks: [{}] },
-        validateTemplate: {},
-        describeStackResource: {
-          StackResourceDetail: { PhysicalResourceId: 's3-bucket-resource' },
-        },
-      },
-    };
-
-    await expect(
-      runServerless({
-        fixture: 'function',
-        command: 'deploy',
-        awsRequestStubMap,
-        lastLifecycleHookName: 'aws:deploy:deploy:checkForChanges',
-      })
-    ).to.eventually.have.been.rejected.and.have.property(
-      'code',
-      'DEPLOYMENT_BUCKET_REMOVED_MANUALLY'
-    );
-  });
-
-  it('with existing stack - with deployment bucket resource missing from CloudFormation template', async () => {
-    const updateStackStub = sinon.stub().resolves({});
-    const describeStackResourceStub = sinon
-      .stub()
-      .onFirstCall()
-      .throws(() => {
-        const err = new Error('does not exist for stack');
-        err.providerError = {
-          code: 'ValidationError',
-        };
-        return err;
-      })
-      .onSecondCall()
-      .resolves({
-        StackResourceDetail: { PhysicalResourceId: 's3-bucket-resource' },
-      });
-
-    const awsRequestStubMap = {
-      ...baseAwsRequestStubMap,
-      ECR: {
-        describeRepositories: sinon.stub().throws({
-          providerError: { code: 'RepositoryNotFoundException' },
-        }),
-      },
-      S3: {
-        listObjectsV2: { Contents: [] },
-        headBucket: () => {
-          const err = new Error();
-          err.code = 'AWS_S3_HEAD_BUCKET_NOT_FOUND';
-          throw err;
-        },
-      },
-      CloudFormation: {
-        describeStacks: { Stacks: [{}] },
-        validateTemplate: {},
-        updateStack: updateStackStub,
-        getTemplate: () => {
-          return {
-            TemplateBody: JSON.stringify({}),
-          };
-        },
-        describeStackEvents: {
-          StackEvents: [
-            {
-              EventId: '1e2f3g4h',
-              StackName: 'new-service-dev',
-              LogicalResourceId: 'new-service-dev',
-              ResourceType: 'AWS::CloudFormation::Stack',
-              Timestamp: new Date(),
-              ResourceStatus: 'UPDATE_COMPLETE',
-            },
-          ],
-        },
-        describeStackResource: describeStackResourceStub,
-      },
-    };
-
-    const { serverless, awsNaming } = await runServerless({
-      fixture: 'function',
-      command: 'deploy',
-      awsRequestStubMap,
-      lastLifecycleHookName: 'aws:deploy:deploy:checkForChanges',
-    });
-
-    expect(updateStackStub).to.be.calledWithExactly({
-      StackName: awsNaming.getStackName(),
-      Capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-      Parameters: [],
-      Tags: [{ Key: 'STAGE', Value: 'dev' }],
-      TemplateBody: JSON.stringify({
-        Resources: serverless.service.provider.coreCloudFormationTemplate.Resources,
-        Outputs: serverless.service.provider.coreCloudFormationTemplate.Outputs,
-      }),
-    });
   });
 });
