@@ -164,7 +164,6 @@ describe('EventBridgeEvents', () => {
         fixture: 'function',
         configExt: {
           ...serverlessConfigurationExtension,
-          disabledDeprecations: ['AWS_EVENT_BRIDGE_CUSTOM_RESOURCE_LEGACY_OPT_IN'],
           provider: {
             eventBridge: {
               useCloudFormation: false,
@@ -285,12 +284,7 @@ describe('EventBridgeEvents', () => {
         runServerless({
           fixture: 'function',
           configExt: {
-            disabledDeprecations: ['AWS_EVENT_BRIDGE_CUSTOM_RESOURCE_LEGACY_OPT_IN'],
-            provider: {
-              eventBridge: {
-                useCloudFormation: false,
-              },
-            },
+            disabledDeprecations: ['AWS_EVENT_BRIDGE_CUSTOM_RESOURCE'],
             functions: {
               basic: {
                 events: [
@@ -322,12 +316,7 @@ describe('EventBridgeEvents', () => {
         runServerless({
           fixture: 'function',
           configExt: {
-            disabledDeprecations: ['AWS_EVENT_BRIDGE_CUSTOM_RESOURCE_LEGACY_OPT_IN'],
-            provider: {
-              eventBridge: {
-                useCloudFormation: false,
-              },
-            },
+            disabledDeprecations: ['AWS_EVENT_BRIDGE_CUSTOM_RESOURCE'],
             functions: {
               basic: {
                 events: [
@@ -358,12 +347,7 @@ describe('EventBridgeEvents', () => {
         runServerless({
           fixture: 'function',
           configExt: {
-            disabledDeprecations: ['AWS_EVENT_BRIDGE_CUSTOM_RESOURCE_LEGACY_OPT_IN'],
-            provider: {
-              eventBridge: {
-                useCloudFormation: false,
-              },
-            },
+            disabledDeprecations: ['AWS_EVENT_BRIDGE_CUSTOM_RESOURCE'],
             functions: {
               basic: {
                 events: [
@@ -382,6 +366,21 @@ describe('EventBridgeEvents', () => {
       ).to.be.eventually.rejected.and.have.property(
         'code',
         'ERROR_INVALID_REFERENCE_TO_EVENT_BUS_CUSTOM_RESOURCE'
+      );
+    });
+
+    it('should emit deprecation when `eventBridge.useCloudFormation` is not explicitly set', async () => {
+      await expect(
+        runServerless({
+          fixture: 'function',
+          configExt: {
+            ...serverlessConfigurationExtension,
+          },
+          command: 'package',
+        })
+      ).to.be.eventually.rejected.and.have.property(
+        'code',
+        'REJECTED_DEPRECATION_AWS_EVENT_BRIDGE_CUSTOM_RESOURCE'
       );
     });
   });
@@ -430,8 +429,75 @@ describe('EventBridgeEvents', () => {
         const { cfTemplate, awsNaming } = await runServerless({
           fixture: 'function',
           configExt: {
+            provider: {
+              eventBridge: {
+                useCloudFormation: true,
+              },
+            },
             functions: {
               basic: {
+                versionFunction: false,
+                events: [
+                  {
+                    eventBridge: {
+                      eventBus: eventBusName,
+                      schedule,
+                      pattern,
+                      input,
+                    },
+                  },
+                  {
+                    eventBridge: {
+                      eventBus: eventBusName,
+                      schedule,
+                      pattern,
+                      inputPath,
+                    },
+                  },
+                  {
+                    eventBridge: {
+                      eventBus: eventBusName,
+                      schedule,
+                      pattern,
+                      inputTransformer,
+                    },
+                  },
+                  {
+                    eventBridge: {
+                      eventBus: eventBusName,
+                      schedule,
+                      enabled: false,
+                      pattern,
+                    },
+                  },
+                  {
+                    eventBridge: {
+                      eventBus: eventBusName,
+                      schedule,
+                      enabled: true,
+                      pattern,
+                    },
+                  },
+                  {
+                    eventBridge: {
+                      eventBus: eventBusName,
+                      schedule,
+                      pattern,
+                      retryPolicy,
+                    },
+                  },
+                  {
+                    eventBridge: {
+                      eventBus: eventBusName,
+                      schedule,
+                      pattern,
+                      deadLetterQueueArn,
+                    },
+                  },
+                ],
+              },
+              other: {
+                versionFunction: true,
                 events: [
                   {
                     eventBridge: {
@@ -498,7 +564,7 @@ describe('EventBridgeEvents', () => {
         cfResources = cfTemplate.Resources;
         naming = awsNaming;
         eventBusLogicalId = naming.getEventBridgeEventBusLogicalId(eventBusName);
-        ruleResource = getRuleResourceEndingWith(cfResources, '1');
+        ruleResource = getRuleResourceEndingWith(cfResources, '-basic-rule-1');
         ruleTarget = ruleResource.Properties.Targets[0];
       });
 
@@ -572,6 +638,12 @@ describe('EventBridgeEvents', () => {
         expect(ruleTarget.Arn['Fn::GetAtt'][0]).to.equal(naming.getLambdaLogicalId('basic'));
       });
 
+      it('should create a rule that references correct function version in target', () => {
+        const otherRuleResource = getRuleResourceEndingWith(cfResources, '-other-rule-1');
+        const otherRuleTarget = otherRuleResource.Properties.Targets[0];
+        expect(otherRuleTarget.Arn.Ref).to.match(naming.getLambdaVersionLogicalIdRegex('other'));
+      });
+
       it('should create a lambda permission resource that correctly references event bus in SourceArn', () => {
         const lambdaPermissionResource =
           cfResources[naming.getEventBridgeLambdaPermissionLogicalId('basic', 1)];
@@ -591,6 +663,11 @@ describe('EventBridgeEvents', () => {
           fixture: 'function',
           command: 'package',
           configExt: {
+            provider: {
+              eventBridge: {
+                useCloudFormation: true,
+              },
+            },
             functions: {
               basic: {
                 events: [
@@ -667,24 +744,5 @@ describe('EventBridgeEvents', () => {
         ).not.to.include('default');
       });
     });
-  });
-
-  it('should trigger deprecation when `useCloudFormation` is set without any `eventBridge` events', async () => {
-    await expect(
-      runServerless({
-        fixture: 'function',
-        command: 'package',
-        configExt: {
-          provider: {
-            eventBridge: {
-              useCloudFormation: true,
-            },
-          },
-        },
-      })
-    ).to.be.eventually.rejected.and.have.property(
-      'code',
-      'REJECTED_DEPRECATION_AWS_EVENT_BRIDGE_CUSTOM_RESOURCE_LEGACY_OPT_IN'
-    );
   });
 });
