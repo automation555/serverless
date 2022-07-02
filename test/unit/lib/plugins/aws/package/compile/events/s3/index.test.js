@@ -6,7 +6,7 @@ const sinon = require('sinon');
 const chai = require('chai');
 const proxyquire = require('proxyquire').noCallThru();
 const AwsProvider = require('../../../../../../../../../lib/plugins/aws/provider');
-const Serverless = require('../../../../../../../../../lib/serverless');
+const Serverless = require('../../../../../../../../../lib/Serverless');
 const runServerless = require('../../../../../../../../utils/run-serverless');
 
 const { expect } = chai;
@@ -23,12 +23,12 @@ describe('AwsCompileS3Events', () => {
     const AwsCompileS3Events = proxyquire(
       '../../../../../../../../../lib/plugins/aws/package/compile/events/s3/index',
       {
-        '../../../../custom-resources': {
+        '../../../../customResources': {
           addCustomResourceToService: addCustomResourceToServiceStub,
         },
       }
     );
-    serverless = new Serverless({ commands: [], options: {} });
+    serverless = new Serverless();
     serverless.service.provider.compiledCloudFormationTemplate = { Resources: {} };
     serverless.setProvider('aws', new AwsProvider(serverless));
     awsCompileS3Events = new AwsCompileS3Events(serverless);
@@ -528,35 +528,6 @@ describe('AwsCompileS3Events', () => {
       });
     });
 
-    it('should support `forceDeploy` setting', async () => {
-      const result = await runServerless({
-        fixture: 'function',
-        configExt: {
-          functions: {
-            basic: {
-              events: [
-                {
-                  s3: {
-                    bucket: 'existing-s3-bucket',
-                    forceDeploy: true,
-                    existing: true,
-                  },
-                },
-              ],
-            },
-          },
-        },
-        command: 'package',
-      });
-
-      const { Resources } = result.cfTemplate;
-      const { awsNaming } = result;
-
-      const customResource = Resources[awsNaming.getCustomResourceS3ResourceLogicalId('basic')];
-
-      expect(typeof customResource.Properties.ForceDeploy).to.equal('number');
-    });
-
     it('should create the necessary resources for a service using multiple event definitions', () => {
       awsCompileS3Events.serverless.service.functions = {
         first: {
@@ -871,6 +842,9 @@ describe('test/unit/lib/plugins/aws/package/compile/events/s3/index.test.js', ()
     const { cfTemplate, awsNaming, serverless } = await runServerless({
       fixture: 'function',
       configExt: {
+        provider: {
+          versionFunctions: false,
+        },
         functions: {
           basic: {
             events: [
@@ -890,48 +864,6 @@ describe('test/unit/lib/plugins/aws/package/compile/events/s3/index.test.js', ()
                   bucket: { Ref: 'SomeBucket' },
                   event: 's3:ObjectCreated:*',
                   existing: true,
-                },
-              },
-            ],
-          },
-          withIf: {
-            handler: 'basic.handler',
-            events: [
-              {
-                s3: {
-                  bucket: {
-                    'Fn::If': [
-                      'isFirstBucketEmtpy',
-                      { Ref: 'FirstBucket' },
-                      { Ref: 'SecondBucket' },
-                    ],
-                  },
-                  event: 's3:ObjectCreated:*',
-                  existing: true,
-                },
-              },
-            ],
-          },
-          prefixSuffixWithCfFunction: {
-            handler: 'basic.handler',
-            events: [
-              {
-                s3: {
-                  bucket: 'TestBucket',
-                  event: 's3:ObjectCreated:*',
-                  existing: true,
-                  rules: [
-                    {
-                      prefix: {
-                        'Fn::Join': ['-', ['test', 'join']],
-                      },
-                    },
-                    {
-                      suffix: {
-                        'Fn::Join': ['-', ['test', 'join']],
-                      },
-                    },
-                  ],
                 },
               },
             ],
@@ -986,61 +918,6 @@ describe('test/unit/lib/plugins/aws/package/compile/events/s3/index.test.js', ()
         FunctionName: `${serverlessInstance.service.service}-dev-other`,
         BucketName: { Ref: 'SomeBucket' },
         BucketConfigs: [{ Event: 's3:ObjectCreated:*', Rules: [] }],
-      },
-    });
-  });
-
-  it('should support `bucket` provided as CF If function', () => {
-    expect(cfResources[naming.getCustomResourceS3ResourceLogicalId('withIf')]).to.deep.equal({
-      Type: 'Custom::S3',
-      Version: 1,
-      DependsOn: ['WithIfLambdaFunction', 'CustomDashresourceDashexistingDashs3LambdaFunction'],
-      Properties: {
-        ServiceToken: {
-          'Fn::GetAtt': ['CustomDashresourceDashexistingDashs3LambdaFunction', 'Arn'],
-        },
-        FunctionName: `${serverlessInstance.service.service}-dev-withIf`,
-        BucketName: {
-          'Fn::If': ['isFirstBucketEmtpy', { Ref: 'FirstBucket' }, { Ref: 'SecondBucket' }],
-        },
-        BucketConfigs: [{ Event: 's3:ObjectCreated:*', Rules: [] }],
-      },
-    });
-  });
-
-  it('should support `prefix` and `suffix` provided as CF function', () => {
-    expect(
-      cfResources[naming.getCustomResourceS3ResourceLogicalId('prefixSuffixWithCfFunction')]
-    ).to.deep.equal({
-      Type: 'Custom::S3',
-      Version: 1,
-      DependsOn: [
-        'PrefixSuffixWithCfFunctionLambdaFunction',
-        'CustomDashresourceDashexistingDashs3LambdaFunction',
-      ],
-      Properties: {
-        ServiceToken: {
-          'Fn::GetAtt': ['CustomDashresourceDashexistingDashs3LambdaFunction', 'Arn'],
-        },
-        FunctionName: `${serverlessInstance.service.service}-dev-prefixSuffixWithCfFunction`,
-        BucketName: 'TestBucket',
-        BucketConfigs: [
-          {
-            Event: 's3:ObjectCreated:*',
-            Rules: [
-              {
-                Prefix: {
-                  'Fn::Join': ['-', ['test', 'join']],
-                },
-              },
-              {
-                Suffix: {
-                  'Fn::Join': ['-', ['test', 'join']],
-                },
-              },
-            ],
-          },
-        ],
       },
     });
   });

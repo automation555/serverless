@@ -1,6 +1,5 @@
 'use strict';
 
-const path = require('path');
 const chai = require('chai');
 const runServerless = require('../../../../../../utils/run-serverless');
 
@@ -49,7 +48,6 @@ describe('lib/plugins/aws/package/compile/layers/index.test.js', () => {
             description: 'Layer two example',
             path: 'layer',
             compatibleRuntimes: ['nodejs12.x'],
-            compatibleArchitectures: ['arm64'],
             licenseInfo: 'GPL',
             allowedAccounts: ['123456789012', '123456789013'],
           },
@@ -72,20 +70,20 @@ describe('lib/plugins/aws/package/compile/layers/index.test.js', () => {
   it('should support `layers[].package.artifact` with `package.individually`', () => {
     const resourceName = 'layer';
     const layerResource = cfResources[naming.getLambdaLayerLogicalId(resourceName)];
-    const s3Folder = service.package.artifactDirectoryName;
-    const s3FileName = service.layers[resourceName].package.artifact.split(path.sep).pop();
 
-    expect(layerResource.Properties.Content.S3Key).to.equal(`${s3Folder}/${s3FileName}`);
+    expect(layerResource.Properties.Content.S3Key).to.match(
+      new RegExp(`${service.package.deploymentDirectoryPrefix}/code-artifacts/[0-9a-f]+.zip`)
+    );
   });
 
   it('should generate expected layer version resource', () => {
     const resourceName = 'layer';
     const layerResource = cfResources[naming.getLambdaLayerLogicalId(resourceName)];
-    const s3Folder = service.package.artifactDirectoryName;
-    const s3FileName = service.layers[resourceName].package.artifact.split(path.sep).pop();
 
     expect(layerResource.Type).to.equals('AWS::Lambda::LayerVersion');
-    expect(layerResource.Properties.Content.S3Key).to.equal(`${s3Folder}/${s3FileName}`);
+    expect(layerResource.Properties.Content.S3Key).to.match(
+      new RegExp(`${service.package.deploymentDirectoryPrefix}/code-artifacts/[0-9a-f]+.zip`)
+    );
     expect(layerResource.Properties.LayerName).to.equal('layer');
     expect(layerResource.Properties.Content.S3Bucket.Ref).to.equal('ServerlessDeploymentBucket');
 
@@ -187,13 +185,6 @@ describe('lib/plugins/aws/package/compile/layers/index.test.js', () => {
 
     expect(layerOne.Type).to.equals('AWS::Lambda::LayerVersion');
     expect(layerOne.Properties.CompatibleRuntimes).to.deep.equals(['nodejs12.x']);
-  });
-
-  it('should support `layers[].compatibleArchitectures`', () => {
-    const layerResourceName = naming.getLambdaLayerLogicalId('LayerTwo');
-    const layerOne = cfResources[layerResourceName];
-
-    expect(layerOne.Properties.CompatibleArchitectures).to.deep.equals(['arm64']);
   });
 
   it('should support `layers[].licenseInfo`', () => {

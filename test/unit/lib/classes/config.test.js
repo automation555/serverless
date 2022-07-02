@@ -1,8 +1,8 @@
 'use strict';
 
 const expect = require('chai').expect;
-const Config = require('../../../../lib/classes/config');
-const Serverless = require('../../../../lib/serverless');
+const Config = require('../../../../lib/classes/Config');
+const Serverless = require('../../../../lib/Serverless');
 
 const serverless = new Serverless({ commands: [], options: {} });
 

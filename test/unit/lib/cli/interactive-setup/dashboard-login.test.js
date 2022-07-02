@@ -53,12 +53,6 @@ describe('test/unit/lib/cli/interactive-setup/dashboard-login.test.js', function
     loginStub.resetHistory();
   });
 
-  it('Should be ineffective in console context', async () => {
-    const context = { isConsole: true };
-    expect(await step.isApplicable(context)).to.be.false;
-    expect(context.inapplicabilityReasonCode).to.equal('CONSOLE_CONTEXT');
-  });
-
   it('Should be ineffective, when not at service path', async () => {
     const context = {};
     expect(await step.isApplicable(context)).to.be.false;
@@ -114,7 +108,7 @@ describe('test/unit/lib/cli/interactive-setup/dashboard-login.test.js', function
       confirm: { shouldLoginOrRegister: true },
     });
     const loginStep = proxyquire('../../../../../lib/cli/interactive-setup/dashboard-login', {
-      '../../../lib/commands/login/dashboard': loginStub,
+      '@serverless/dashboard-plugin/lib/login': loginStub,
       '@serverless/platform-client': {
         ServerlessSDK: ServerlessSDKMock,
       },
@@ -137,7 +131,7 @@ describe('test/unit/lib/cli/interactive-setup/dashboard-login.test.js', function
 
   it('Should login and skip question when user providers `org` option', async () => {
     const loginStep = proxyquire('../../../../../lib/cli/interactive-setup/dashboard-login', {
-      '../../../lib/commands/login/dashboard': loginStub,
+      '@serverless/dashboard-plugin/lib/login': loginStub,
       '@serverless/platform-client': {
         ServerlessSDK: ServerlessSDKMock,
       },
@@ -157,7 +151,7 @@ describe('test/unit/lib/cli/interactive-setup/dashboard-login.test.js', function
 
   it('Should login and skip question when `org` configured', async () => {
     const loginStep = proxyquire('../../../../../lib/cli/interactive-setup/dashboard-login', {
-      '../../../lib/commands/login/dashboard': loginStub,
+      '@serverless/dashboard-plugin/lib/login': loginStub,
       '@serverless/platform-client': {
         ServerlessSDK: ServerlessSDKMock,
       },
@@ -180,7 +174,7 @@ describe('test/unit/lib/cli/interactive-setup/dashboard-login.test.js', function
       confirm: { shouldLoginOrRegister: false },
     });
     const loginStep = proxyquire('../../../../../lib/cli/interactive-setup/dashboard-login', {
-      '../../../lib/commands/login/dashboard': loginStub,
+      '@serverless/dashboard-plugin/lib/login': loginStub,
       '@serverless/platform-client': {
         ServerlessSDK: ServerlessSDKMock,
       },

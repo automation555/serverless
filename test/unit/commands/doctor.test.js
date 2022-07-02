@@ -16,7 +16,7 @@ describe('test/unit/commands/doctor.test.js', async () => {
   });
 
   it('should print health status after command which triggered deprecation', async () => {
-    const { servicePath: serviceDir } = await fixturesEngine.setup('http-api', {
+    const { servicePath: serviceDir } = await fixturesEngine.setup('httpApi', {
       configExt: {
         provider: {
           httpApi: {

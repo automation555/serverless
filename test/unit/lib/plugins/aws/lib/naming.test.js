@@ -4,7 +4,7 @@ const expect = require('chai').expect;
 const _ = require('lodash');
 
 const SDK = require('../../../../../../lib/plugins/aws/provider');
-const Serverless = require('../../../../../../lib/serverless');
+const Serverless = require('../../../../../../lib/Serverless');
 
 describe('#naming()', () => {
   let options;
@@ -15,8 +15,6 @@ describe('#naming()', () => {
     options = {
       stage: 'dev',
       region: 'us-east-1',
-      commands: [],
-      options: {},
     };
     serverless = new Serverless(options);
     sdk = new SDK(serverless, options);
@@ -101,22 +99,6 @@ describe('#naming()', () => {
       serverless.service.service = 'myService';
       serverless.service.provider.stage = sdk.naming.provider.getStage();
       expect(sdk.naming.getStackName()).to.equal('app-dev-testApp');
-    });
-  });
-
-  describe('#getStackChangeSetName()', () => {
-    it('should use the service name & stage if custom stack name not provided', () => {
-      serverless.service.service = 'myService';
-      expect(sdk.naming.getStackChangeSetName()).to.equal(
-        `${serverless.service.service}-${sdk.naming.provider.getStage()}-change-set`
-      );
-    });
-
-    it('should use the custom stack name if provided', () => {
-      serverless.service.provider.stackName = 'app-dev-testApp';
-      serverless.service.service = 'myService';
-      serverless.service.provider.stage = sdk.naming.provider.getStage();
-      expect(sdk.naming.getStackChangeSetName()).to.equal('app-dev-testApp-change-set');
     });
   });
 
@@ -448,12 +430,8 @@ describe('#naming()', () => {
   describe('#getEndpointModelLogicalId()', () => {
     it('', () => {
       expect(
-        sdk.naming.getEndpointModelLogicalId(
-          'ResourceId',
-          'get',
-          'application/x-www-form-urlencoded'
-        )
-      ).to.equal('ApiGatewayMethodResourceIdGetApplicationXWwwFormUrlencodedModel');
+        sdk.naming.getEndpointModelLogicalId('ResourceId', 'get', 'application/json')
+      ).to.equal('ApiGatewayMethodResourceIdGetApplicationJsonModel');
     });
   });
 
@@ -581,6 +559,15 @@ describe('#naming()', () => {
     it('should add the standard suffix', () => {
       expect(sdk.naming.getStreamConsumerName('functionName', 'streamName')).to.equal(
         'functionNamestreamNameConsumer'
+      );
+    });
+
+    it('should return service specific stream consumer name', () => {
+      serverless.service.serviceObject = { name: 'myService' };
+      serverless.service.provider.stage = sdk.naming.provider.getStage();
+      serverless.service.provider.kinesis = { consumerNamingMode: 'serviceSpecific' };
+      expect(sdk.naming.getStreamConsumerName('functionName', 'streamName')).to.equal(
+        'functionNamestreamNamemyServicedevConsumer'
       );
     });
   });
@@ -1044,14 +1031,6 @@ describe('#naming()', () => {
     it('should normalize the name and append correct suffix', () => {
       expect(sdk.naming.getLambdaAuthorizerHttpApiPermissionLogicalId('authorizerName')).to.equal(
         'AuthorizerNameLambdaAuthorizerPermissionHttpApi'
-      );
-    });
-  });
-
-  describe('#getLambdaFnUrlPermissionLogicalId()', () => {
-    it('should normalize the name and append correct suffix', () => {
-      expect(sdk.naming.getLambdaFnUrlPermissionLogicalId('fnName')).to.equal(
-        'FnNameLambdaPermissionFnUrl'
       );
     });
   });

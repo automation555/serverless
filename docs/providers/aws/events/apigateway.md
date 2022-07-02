@@ -1,8 +1,8 @@
 <!--
-title: Serverless Framework - AWS Lambda Events - REST API (API Gateway v1)
+title: Serverless Framework - AWS Lambda Events - API Gateway
 menuText: API Gateway
 menuOrder: 1
-description: Deploying REST APIs with AWS Lambda and API Gateway v1 via the Serverless Framework
+description: Setting up AWS API Gateway Events with AWS Lambda via the Serverless Framework
 layout: Doc
 -->
 
@@ -12,7 +12,7 @@ layout: Doc
 
 <!-- DOCS-SITE-LINK:END -->
 
-# REST API (API Gateway v1)
+# API Gateway REST API
 
 API Gateway lets you deploy HTTP APIs. It comes [in two versions](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-vs-rest.html):
 
@@ -253,7 +253,6 @@ functions:
               - X-Api-Key
               - X-Amz-Security-Token
               - X-Amz-User-Agent
-              - X-Amzn-Trace-Id
             allowCredentials: false
 ```
 
@@ -278,7 +277,6 @@ functions:
               - X-Api-Key
               - X-Amz-Security-Token
               - X-Amz-User-Agent
-              - X-Amzn-Trace-Id
             allowCredentials: false
 ```
 
@@ -340,7 +338,6 @@ functions:
               - X-Api-Key
               - X-Amz-Security-Token
               - X-Amz-User-Agent
-              - X-Amzn-Trace-Id
             allowCredentials: false
             # Caches on browser and proxy for 10 minutes and doesnt allow proxy to serve out of date content
             cacheControl: 'max-age=600, s-maxage=600, proxy-revalidate'
@@ -899,7 +896,7 @@ not blocked. Currently, API Gateway [supports](https://docs.aws.amazon.com/apiga
 
 ### Setting source of API key for metering requests
 
-API Gateway provides a feature for metering your API's requests and you can choose [the source of key](https://docs.aws.amazon.com/apigateway/api-reference/resource/rest-api/#apiKeySource) which is used for metering. If you want to acquire that key from the request's X-API-Key header, set option like this:
+API Gateway provide a feature for metering your API's requests and you can choice [the source of key](https://docs.aws.amazon.com/apigateway/api-reference/resource/rest-api/#apiKeySource) which is used for metering. If you want to acquire that key from the request's X-API-Key header, set option like this:
 
 ```yml
 service: my-service

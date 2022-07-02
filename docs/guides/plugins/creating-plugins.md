@@ -83,9 +83,9 @@ Lifecycle events are events that fire sequentially during a CLI command.
 
 Additionally, for each event an additional `before` and `after` event is created. For example:
 
-- `before:package:package`
-- `package:package`
-- `after:package:package`
+- `before:package:initialize`
+- `package:createDeploymentArtifacts`
+- `after:package:finalize`
 - `before:deploy:deploy`
 - `deploy:deploy`
 - `after:deploy:deploy`
@@ -187,15 +187,3 @@ class MyPlugin {
 ```
 
 The plugin will now only be executed when the service's provider matches the given provider.
-
-## ESM plugins
-
-If you use Node.js v12.22 or later, ESM plugins are also supported.
-
-```javascript
-export default class MyPlugin {
-  constructor() {
-    // The plugin is loaded
-  }
-}
-```

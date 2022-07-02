@@ -13,7 +13,6 @@ describe('test/unit/lib/plugins/aws/package/compile/events/activemq.test.js', ()
   const queue = 'TestingQueue';
   const enabled = false;
   const batchSize = 5000;
-  const maximumBatchingWindow = 20;
 
   describe('when there are activemq events defined', () => {
     let minimalEventSourceMappingResource;
@@ -45,7 +44,6 @@ describe('test/unit/lib/plugins/aws/package/compile/events/activemq.test.js', ()
                     arn: brokerArn,
                     basicAuthArn,
                     batchSize,
-                    maximumBatchingWindow,
                     enabled,
                   },
                 },
@@ -83,7 +81,7 @@ describe('test/unit/lib/plugins/aws/package/compile/events/activemq.test.js', ()
       expect(defaultIamRole.Properties.Policies[0].PolicyDocument.Statement).to.deep.include({
         Effect: 'Allow',
         Action: ['mq:DescribeBroker'],
-        Resource: [brokerArn],
+        Resource: brokerArn,
       });
     });
 
@@ -91,7 +89,7 @@ describe('test/unit/lib/plugins/aws/package/compile/events/activemq.test.js', ()
       expect(defaultIamRole.Properties.Policies[0].PolicyDocument.Statement).to.deep.include({
         Effect: 'Allow',
         Action: ['secretsmanager:GetSecretValue'],
-        Resource: [basicAuthArn],
+        Resource: basicAuthArn,
       });
     });
 
@@ -104,7 +102,6 @@ describe('test/unit/lib/plugins/aws/package/compile/events/activemq.test.js', ()
       expect(allParamsEventSourceMappingResource.Properties).to.deep.equal({
         EventSourceArn: brokerArn,
         BatchSize: batchSize,
-        MaximumBatchingWindowInSeconds: maximumBatchingWindow,
         Enabled: enabled,
         SourceAccessConfigurations: [
           {

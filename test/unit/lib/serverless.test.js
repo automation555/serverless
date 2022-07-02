@@ -6,15 +6,15 @@ chai.use(require('chai-as-promised'));
 
 const { expect } = chai;
 
-const Serverless = require('../../../lib/serverless');
+const Serverless = require('../../../lib/Serverless');
 const semverRegex = require('semver-regex');
 
-const YamlParser = require('../../../lib/classes/yaml-parser');
-const PluginManager = require('../../../lib/classes/plugin-manager');
-const Utils = require('../../../lib/classes/utils');
-const Service = require('../../../lib/classes/service');
-const ConfigSchemaHandler = require('../../../lib/classes/config-schema-handler');
-const CLI = require('../../../lib/classes/cli');
+const YamlParser = require('../../../lib/classes/YamlParser');
+const PluginManager = require('../../../lib/classes/PluginManager');
+const Utils = require('../../../lib/classes/Utils');
+const Service = require('../../../lib/classes/Service');
+const ConfigSchemaHandler = require('../../../lib/classes/ConfigSchemaHandler');
+const CLI = require('../../../lib/classes/CLI');
 const ServerlessError = require('../../../lib/serverless-error');
 const runServerless = require('../../utils/run-serverless');
 
@@ -155,7 +155,7 @@ describe('Serverless', () => {
   });
 });
 
-describe('test/unit/lib/serverless.test.js', () => {
+describe('test/unit/lib/Serverless.test.js', () => {
   describe('Legacy API interface', () => {
     let serverless;
 

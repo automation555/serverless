@@ -31,10 +31,10 @@ const mockedSdk = {
 };
 
 const step = proxyquire('../../../../../lib/cli/interactive-setup/aws-credentials', {
-  '../../utils/open-browser': async (url) => {
+  '../../utils/openBrowser': async (url) => {
     openBrowserUrls.push(url);
   },
-  '@serverless/dashboard-plugin/lib/client-utils': {
+  '@serverless/dashboard-plugin/lib/clientUtils': {
     getPlatformClientWithAccessKey: async () => mockedSdk,
   },
 });
@@ -90,15 +90,15 @@ describe('test/unit/lib/cli/interactive-setup/aws-credentials.test.js', () => {
       },
     };
     const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/aws-credentials', {
-      '@serverless/dashboard-plugin/lib/client-utils': {
+      '@serverless/dashboard-plugin/lib/clientUtils': {
         getPlatformClientWithAccessKey: async () => internalMockedSdk,
       },
-      '@serverless/dashboard-plugin/lib/is-authenticated': () => true,
+      '@serverless/dashboard-plugin/lib/isAuthenticated': () => true,
     });
 
     const context = {
       serviceDir: process.cwd(),
-      configuration: { provider: { name: 'aws' }, org: 'someorg', app: 'someapp' },
+      configuration: { provider: { name: 'aws' }, org: 'someorg' },
       configurationFilename: 'serverless.yml',
     };
     expect(await mockedStep.isApplicable(context)).to.be.false;
@@ -126,10 +126,10 @@ describe('test/unit/lib/cli/interactive-setup/aws-credentials.test.js', () => {
       },
     };
     const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/aws-credentials', {
-      '@serverless/dashboard-plugin/lib/client-utils': {
+      '@serverless/dashboard-plugin/lib/clientUtils': {
         getPlatformClientWithAccessKey: async () => internalMockedSdk,
       },
-      '@serverless/dashboard-plugin/lib/is-authenticated': () => true,
+      '@serverless/dashboard-plugin/lib/isAuthenticated': () => true,
       './utils': {
         doesServiceInstanceHaveLinkedProvider: () => true,
       },
@@ -143,53 +143,6 @@ describe('test/unit/lib/cli/interactive-setup/aws-credentials.test.js', () => {
         org: 'someorg',
         app: 'someapp',
         service: 'service',
-      },
-      options: {},
-      configurationFilename: 'serverless.yml',
-    };
-    expect(await mockedStep.isApplicable(context)).to.be.false;
-    expect(context.inapplicabilityReasonCode).to.equal('LINKED_PROVIDER_CONFIGURED');
-  });
-
-  it('Should recognize dashboard providers with console integration on', async () => {
-    const internalMockedSdk = {
-      ...mockedSdk,
-      getProviders: async () => {
-        return {
-          result: [
-            {
-              alias: 'someprovider',
-              providerName: 'aws',
-              providerType: 'roleArn',
-              providerUid: 'provideruid',
-              isDefault: false,
-              providerDetails: {
-                roleArn: 'arn:xxx',
-              },
-            },
-          ],
-        };
-      },
-    };
-    const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/aws-credentials', {
-      '@serverless/dashboard-plugin/lib/client-utils': {
-        getPlatformClientWithAccessKey: async () => internalMockedSdk,
-      },
-      '@serverless/dashboard-plugin/lib/is-authenticated': () => true,
-      './utils': {
-        doesServiceInstanceHaveLinkedProvider: () => true,
-      },
-    });
-
-    const context = {
-      history: new Set(),
-      serviceDir: process.cwd(),
-      configuration: {
-        provider: { name: 'aws' },
-        org: 'someorg',
-        app: 'someapp',
-        service: 'service',
-        console: true,
       },
       options: {},
       configurationFilename: 'serverless.yml',
@@ -219,10 +172,10 @@ describe('test/unit/lib/cli/interactive-setup/aws-credentials.test.js', () => {
       },
     };
     const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/aws-credentials', {
-      '@serverless/dashboard-plugin/lib/client-utils': {
+      '@serverless/dashboard-plugin/lib/clientUtils': {
         getPlatformClientWithAccessKey: async () => internalMockedSdk,
       },
-      '@serverless/dashboard-plugin/lib/is-authenticated': () => true,
+      '@serverless/dashboard-plugin/lib/isAuthenticated': () => true,
       './utils': {
         doesServiceInstanceHaveLinkedProvider: () => false,
       },
@@ -244,7 +197,7 @@ describe('test/unit/lib/cli/interactive-setup/aws-credentials.test.js', () => {
     ).to.be.true;
   });
 
-  it('Should be ineffective when dashboard is not available', async () => {
+  it('Should be ineffective dashboard is not available', async () => {
     const internalMockedSdk = {
       ...mockedSdk,
       getProviders: async () => {
@@ -254,16 +207,16 @@ describe('test/unit/lib/cli/interactive-setup/aws-credentials.test.js', () => {
       },
     };
     const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/aws-credentials', {
-      '@serverless/dashboard-plugin/lib/client-utils': {
+      '@serverless/dashboard-plugin/lib/clientUtils': {
         getPlatformClientWithAccessKey: async () => internalMockedSdk,
       },
-      '@serverless/dashboard-plugin/lib/is-authenticated': () => true,
+      '@serverless/dashboard-plugin/lib/isAuthenticated': () => true,
     });
 
     expect(
       await mockedStep.isApplicable({
         serviceDir: process.cwd(),
-        configuration: { provider: { name: 'aws' }, org: 'someorg', app: 'someapp' },
+        configuration: { provider: { name: 'aws' }, org: 'someorg' },
         configurationFilename: 'serverless.yml',
       })
     ).to.be.false;
@@ -492,11 +445,11 @@ describe('test/unit/lib/cli/interactive-setup/aws-credentials.test.js', () => {
         createProviderLink: mockedCreateProviderLink,
       };
       const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/aws-credentials', {
-        '@serverless/dashboard-plugin/lib/client-utils': {
+        '@serverless/dashboard-plugin/lib/clientUtils': {
           getPlatformClientWithAccessKey: async () => internalMockedSdk,
         },
-        '../../utils/open-browser': mockedOpenBrowser,
-        '@serverless/dashboard-plugin/lib/is-authenticated': () => true,
+        '../../utils/openBrowser': mockedOpenBrowser,
+        '@serverless/dashboard-plugin/lib/isAuthenticated': () => true,
       });
 
       configureInquirerStub(inquirer, {
@@ -562,11 +515,11 @@ describe('test/unit/lib/cli/interactive-setup/aws-credentials.test.js', () => {
         createProviderLink: mockedCreateProviderLink,
       };
       const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/aws-credentials', {
-        '@serverless/dashboard-plugin/lib/client-utils': {
+        '@serverless/dashboard-plugin/lib/clientUtils': {
           getPlatformClientWithAccessKey: async () => internalMockedSdk,
         },
-        '../../utils/open-browser': mockedOpenBrowser,
-        '@serverless/dashboard-plugin/lib/is-authenticated': () => true,
+        '../../utils/openBrowser': mockedOpenBrowser,
+        '@serverless/dashboard-plugin/lib/isAuthenticated': () => true,
       });
 
       configureInquirerStub(inquirer, {
@@ -613,10 +566,10 @@ describe('test/unit/lib/cli/interactive-setup/aws-credentials.test.js', () => {
         },
       };
       const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/aws-credentials', {
-        '@serverless/dashboard-plugin/lib/client-utils': {
+        '@serverless/dashboard-plugin/lib/clientUtils': {
           getPlatformClientWithAccessKey: async () => internalMockedSdk,
         },
-        '../../utils/open-browser': mockedOpenBrowser,
+        '../../utils/openBrowser': mockedOpenBrowser,
       });
 
       configureInquirerStub(inquirer, {
@@ -667,7 +620,7 @@ describe('test/unit/lib/cli/interactive-setup/aws-credentials.test.js', () => {
         createProviderLink: mockedCreateProviderLink,
       };
       const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/aws-credentials', {
-        '@serverless/dashboard-plugin/lib/client-utils': {
+        '@serverless/dashboard-plugin/lib/clientUtils': {
           getPlatformClientWithAccessKey: async () => internalMockedSdk,
         },
       });
@@ -728,7 +681,7 @@ describe('test/unit/lib/cli/interactive-setup/aws-credentials.test.js', () => {
         createProviderLink: mockedCreateProviderLink,
       };
       const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/aws-credentials', {
-        '@serverless/dashboard-plugin/lib/client-utils': {
+        '@serverless/dashboard-plugin/lib/clientUtils': {
           getPlatformClientWithAccessKey: async () => internalMockedSdk,
         },
       });
@@ -772,15 +725,15 @@ describe('test/unit/lib/cli/interactive-setup/aws-credentials.test.js', () => {
         },
       };
       const mockedStep = proxyquire('../../../../../lib/cli/interactive-setup/aws-credentials', {
-        '@serverless/dashboard-plugin/lib/client-utils': {
+        '@serverless/dashboard-plugin/lib/clientUtils': {
           getPlatformClientWithAccessKey: async () => internalMockedSdk,
         },
-        '@serverless/dashboard-plugin/lib/is-authenticated': () => true,
+        '@serverless/dashboard-plugin/lib/isAuthenticated': () => true,
       });
 
       await mockedStep.run({
         serviceDir: process.cwd(),
-        configuration: { provider: { name: 'aws' }, org: 'someorg', app: 'someapp' },
+        configuration: { provider: { name: 'aws' }, org: 'someorg' },
         options: {},
         configurationFilename: 'serverless.yml',
       });
